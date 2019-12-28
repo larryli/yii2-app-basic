@@ -235,7 +235,7 @@ sudo apt-get update
 sudo EXTERNAL_URL=$GITLAB_URL apt-get install gitlab-ce
 ```
 
-参见 https://about.gitlab.com/install/#ubuntu 与 https://mirrors.tuna.tsinghua.edu.cn/help/gitlab-ce/ 说明。
+参见 [https://about.gitlab.com/install/#ubuntu](https://about.gitlab.com/install/#ubuntu) 与 [https://mirrors.tuna.tsinghua.edu.cn/help/gitlab-ce/](https://mirrors.tuna.tsinghua.edu.cn/help/gitlab-ce/) 说明。
 
 修改 gitlab 配置：
 
@@ -273,7 +273,7 @@ nginx['listen_addresses'] = ['192.168.99.8']
 # registry_nginx['listen_port'] = 5050
 ```
 
-增加一行：
+后面增加一行：
 
 ```ruby
 registry_nginx['listen_addresses'] = ['192.168.99.8']
@@ -298,7 +298,7 @@ sudo gitlab-ctl reconfigure
 
 首先填入 **Kubernetes cluster name** 为 `MicroK8s`，**API URL** 为 `https://192.168.99.9:16443`。
 
-参考 https://docs.gitlab.com/ee/user/project/clusters/add_remove_clusters.html#existing-gke-cluster
+参考 [https://docs.gitlab.com/ee/user/project/clusters/add_remove_clusters.html#existing-gke-cluster](https://docs.gitlab.com/ee/user/project/clusters/add_remove_clusters.html#existing-gke-cluster)
 
 先使用 `kubectl get secrets` 选取一个 `default-token-xxx`，然后执行：
 
@@ -336,7 +336,7 @@ subjects:
 
 ```bash
 kubectl apply -f gitlab-admin-service-account.yaml
-``
+```
 
 成功后，使用：
 
@@ -372,7 +372,7 @@ kubectl -n gitlab-managed-apps get svc ingress-nginx-ingress-controller
 
 可以看到 `EXTERNAL-IP` 为 `<pending>`。
 
-参考 https://stackoverflow.com/a/54168660
+参考 [https://stackoverflow.com/a/54168660](https://stackoverflow.com/a/54168660)
 
 指定具体 IP：
 
@@ -424,7 +424,7 @@ docker push $CI_REGISTRY/$PROJECT/$BRANCH:builder
 
 请使用 GitLab 12.6.0 以上版本，在 **Kubernetes** 的 **Advanced settings** 中点击 **Clear cluster cache**。
 
-参见 https://docs.gitlab.com/ee/user/project/clusters/index.html#clearing-the-cluster-cache
+参见 [https://docs.gitlab.com/ee/user/project/clusters/index.html#clearing-the-cluster-cache](https://docs.gitlab.com/ee/user/project/clusters/index.html#clearing-the-cluster-cache)
 
 
 ### 部署出错提示 Error: UPGRADE FAILED: "staging" has no deployed releases
@@ -443,4 +443,4 @@ helm ls
 helm delete staging --purge --tiller-namespace $KUBE_NAMESPACE
 ```
 
-参见 https://gitlab.com/gitlab-org/gitlab-foss/issues/54760
+参见 [https://gitlab.com/gitlab-org/gitlab-foss/issues/54760](https://gitlab.com/gitlab-org/gitlab-foss/issues/54760)
