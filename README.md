@@ -412,11 +412,132 @@ kubectl -n gitlab-managed-apps patch svc ingress-nginx-ingress-controller -p "{\
 
 使用 **Import Project** 选择 **Repo by URL** 填入 `https://github.com/larryli/yii2-auto-devops.git` 创建项目。
 
+### CI / CD 设置
+
+#### staging 与 production 部署方式
+
+**Auto DevOps** 的 **Deployment strategy** 的三项设置：
+
+- *Continuous deployment to production*
+- *Continuous deployment to production using timed incremental rollout*
+- *Automatic deployment to staging, manual deployment to production*
+
+会与 **Variables** 中的：
+
+- `INCREMENTAL_ROLLOUT_MODE`
+- `STAGING_ENABLED`
+
+相互作用。
+
+首先，**Deployment strategy** 的选择会决定 `INCREMENTAL_ROLLOUT_MODE` 和 `STAGING_ENABLED` 默认值，如下表所示：
+
+**Deployment strategy** | `INCREMENTAL_ROLLOUT_MODE` | `STAGING_ENABLED`
+--- | --- | ---
+*Continuous deployment to production* | - | `false`
+*Continuous deployment to production using timed incremental rollout* | `timed` | `false`
+*Automatic deployment to staging, manual deployment to production* | `manual` | `true`
+
+所以，部署方式实际会下列可能：
+
+staging | production | **Deployment strategy** | `INCREMENTAL_ROLLOUT_MODE` | `STAGING_ENABLED`
+--- | --- | --- | --- | ---
+无 | 自动部署 | *Continuous deployment to production* | - | -
+无 | 手动部署 | *Continuous deployment to production* | `manual` | -
+无 | 定时增量部署 | *Continuous deployment to production using timed incremental rollout* | `timed` | -
+无 | 手动增量部署 | *Continuous deployment to production using timed incremental rollout* | `manual` | -
+无 | 手动增量部署 | *Automatic deployment to staging, manual deployment to production* | - | `false`
+自动部署 | 手动部署 | *Continuous deployment to production* | - | `true`
+自动部署 | 定时增量部署 | *Continuous deployment to production using timed incremental rollout* | - | `true`
+自动部署 | 定时增量部署 | *Automatic deployment to staging, manual deployment to production* | `timed` | -
+自动部署 | 手动增量部署 | *Automatic deployment to staging, manual deployment to production* | - | -
+
+实际六种部署方式，请按照需要预先选择好部署方式。
+
+对于增加部署，可选的 `ROLLOUT_STATUS_DISABLED` = `true` 可以在部署日志中不显示状态信息。
+
+#### review 部署
+
+仅一个 `REVIEW_DISABLED` = `false` 关闭默认的自动在分支上审查应用功能。
+
+#### 附加域名
+
+使用单独指定 **Scope** 的 `ADDITIONAL_HOSTS` 或具体 `<env>_ADDITIONAL_HOSTS` 如 `PRODUCTION_ADDITIONAL_HOSTS` 设置部署应用的附加域名。
+
+域名可以为多个，以英文逗号分隔。如：`domain.com, www.domain.com`。
+
+`<env>_ADDITIONAL_HOSTS` 的优先级要比 `ADDITIONAL_HOSTS` 高。
+
+#### MySQL 数据库
+
+可以使用 `MYSQL_ENABLED` = `false` 关闭默认的自动部署 MySQL 服务，从而使用外部 MySQL（可以手工在同一 Kubernets 上安装，也可以使用现有服务）。
+
+当 `MYSQL_ENABLED` = `false` 时，建议按实际情况完整指定 `MYSQL_HOST`、`MYSQL_DB`、`MYSQL_USER` 与 `MYSQL_PASSWORD`。
+
+当 `MYSQL_ENABLED` = `true` 时，一定不要设置 `MYSQL_HOST`，否则无法连接自动安装的 MySQL。`MYSQL_DB`、`MYSQL_USER` 与 `MYSQL_PASSWORD` 可以按需指定。另外可以使用 `MYSQL_VERSION` 指定 MySQL 版本。
+
+#### 数据库初始化与迁移
+
+对于 Yii2 来说，均采用了同一脚本，即：
+
+- `DB_INITIALIZE` = `"/app/yii migrate/up --interactive=0"`
+- `DB_MIGRATE` = `"/app/yii migrate/up --interactive=0"`
+
+使用默认值即可，一般无需修改。
+
+#### 数据库结构缓存
+
+使用 `K8S_SECRET_ENABLE_SCHEMA_CACHE` = `true` 开始缓存，可以配置缓存时间 `K8S_SECRET_SCHEMA_CACHE_DURATION`（单位：秒，默认 `60` 秒）和缓存实体 `K8S_SECRET_SCHEMA_CACHE`（默认 `cache`）。
+
+当 Yii2 缓存也使用数据库缓存时，请不要一开始就是开启此项。
+一定要部署成功后，后续部署时开启结构缓存。
+否则会在建表前无法读到缓存（因为缓存表未建）的问题。
+
+#### Cookie 配置
+
+`K8S_SECRET_COOKIE_VALIDATION_KEY` 是唯一一个必须配置的变量，对于 production 也建议使用 **Scope** 单独指定，并勾选 **Masked**。
+
+#### Yii2 环境与调试
+
+默认 `YII_DEBUG=false` `YII_ENV=prod`。
+
+可以使用 `K8S_SECRET_YII_DEBUG` 和 `K8S_SECRET_YII_ENV` 分别配置为 `true` 与 `dev` 开启调试。
+
+并设置 `K8S_SECRET_DEBUG_IP` = `*` 允许所有 IP 可访问调试面板。
+
+注意：默认 Dockerfile 打包 composer 使用了 --no-dev 参数，如果需要线上调试，请修改 Dockerfile 重新打包后启用调试功能。
+否则会部署失败（无法加载 dev 相关包）。
+
+#### 其他变量
+
+`K8S_SECRET_ADMIN_EMAIL`、`K8S_SECRET_SENDER_EMAIL`、`K8S_SECRET_SENDER_NAME` 均为演示目的。
+
+注意：当前项目并未配置 postfix 或 smtp，所以无法发送邮件。
+
+### 构建与部署技术架构
+
+文档待完成。
+
 ## FAQ
 
 ### 使用本地 Docker 缓存加速（解决） CI 构建缓慢（失败）
 
 如果服务器 CI 构建出现问题，可以选择在本地使用 Docker 构建后推到容器镜像库。当然，不同分支切换时因为缓存不存在，也可以拉取其他分支的镜像缓存回来，通过 tag 改名再推到容器镜像库作为缓存加速服务器 CI 执行。
+
+Tag 改名：
+
+```bash
+export CI_REGISTRY=registry.192-168-99-8.nip.io
+export PROJECT=root/yii2-auto-devops
+export SOURCE_BRANCH=master
+export BRANCH=foobar
+docker login $CI_REGISTRY
+docker pull $CI_REGISTRY/$PROJECT/$SOURCE_BRANCH:composer
+docker tag $CI_REGISTRY/$PROJECT/$SOURCE_BRANCH:composer $CI_REGISTRY/root/yii2-auto-devops/$BRANCH:composer
+docker push $CI_REGISTRY/$PROJECT/$BRANCH:composer
+docker pull $CI_REGISTRY/$PROJECT/$SOURCE_BRANCH:builder
+docker tag $CI_REGISTRY/$PROJECT/$SOURCE_BRANCH:builder $CI_REGISTRY/root/yii2-auto-devops/$BRANCH:builder
+docker push $CI_REGISTRY/$PROJECT/$BRANCH:builder
+```
 
 本地构建：
 
@@ -433,20 +554,14 @@ docker build --tag $CI_REGISTRY/$PROJECT/$BRANCH:latest .
 docker push $CI_REGISTRY/$PROJECT/$BRANCH:latest
 ```
 
-Tag 改名：
+注意：本地构建会因为 Windows 与 Linux 文件系统不同造成差异，从而使得缓存失效。
+
+### 更新 chart requirements.lock
 
 ```bash
-export CI_REGISTRY=registry.192-168-99-8.nip.io
-export PROJECT=root/yii2-auto-devops
-export SOURCE_BRANCH=master
-export BRANCH=foobar
-docker login $CI_REGISTRY
-docker pull $CI_REGISTRY/$PROJECT/$SOURCE_BRANCH:composer
-docker tag $CI_REGISTRY/$PROJECT/$SOURCE_BRANCH:composer $CI_REGISTRY/root/yii2-auto-devops/$BRANCH:composer
-docker push $CI_REGISTRY/$PROJECT/$BRANCH:composer
-docker pull $CI_REGISTRY/$PROJECT/$SOURCE_BRANCH:builder
-docker tag $CI_REGISTRY/$PROJECT/$SOURCE_BRANCH:builder $CI_REGISTRY/root/yii2-auto-devops/$BRANCH:builder
-docker push $CI_REGISTRY/$PROJECT/$BRANCH:builder
+export CHART_MIRROR=https://mirror.azure.cn/kubernetes/charts/
+helm init --client-only --stable-repo-url $CHART_MIRROR
+helm dependency update chart/
 ```
 
 ### 部署出错提示 Error: error installing: namespaces "staging" not found
@@ -466,7 +581,7 @@ docker push $CI_REGISTRY/$PROJECT/$BRANCH:builder
 
 ```bash
 export CHART_MIRROR=https://mirror.azure.cn/kubernetes/charts/
-export KUBE_NAMESPACE=1-root-yii2-staging
+export KUBE_NAMESPACE=yii2-auto-devops-1-staging
 export CHART_NAME=staging
 export TILLER_NAMESPACE=$KUBE_NAMESPACE
 tiller -listen localhost:44134 &
