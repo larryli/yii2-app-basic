@@ -41,7 +41,7 @@
 
 ### scoop 安装软件包
 
-建议使用 [scoop](https://scoop.sh) 安装 docker、git、helm、kubectl、virtualbox-np/virtualbox52-np（建议 5.2）软件包。
+建议使用 [scoop](https://scoop.sh) 安装 `docker`、`git`、`helm`、`kubectl`、`virtualbox-np`/`virtualbox52-np`（建议 5.2）软件包。
 
 以下脚本示例均使用 Git Bash 作为 Shell。
 
@@ -93,10 +93,10 @@ docker-machine create default --engine-registry-mirror=$REGISTRY_MIRROR --engine
 
 启动虚拟机，选择启动盘为已下载的 ubuntu-18.04.3-live-server-amd64.iso 文件。
 
-不建议使用中文作为系统语言，默认 English。
-网络配置会显示两块网卡，默认都会 DHCP 配置；其中 `10.0.2.15/24` 是作为外网 NAT 访问用，不需要修改；另一块网卡则是内网使用，不建议使用 DHCP 需要修改为静态 IP，单机部署更需要设置两个静态 IP，当前先只配置一个 IP，选择该网卡 `Edit IPv4`，IPv4 Method 选择 `Manual`，Subnet 为 `192.168.99.0/24`，Address 为 `192.168.99.8`，其他项目留空（不使用该网卡访问外网也就不需要设置网关与域名解析）。
-Proxy 默认为空。
-Mirror 建议修改为 `http://mirrors.aliyun.com/ubuntu`。
+不建议使用中文作为系统语言，默认 `English`。
+网络配置会显示两块网卡，默认都会 DHCP 配置；其中 `10.0.2.15/24` 是作为外网 NAT 访问用，不需要修改；另一块网卡则是内网使用，不建议使用 DHCP 需要修改为静态 IP，单机部署更需要设置两个静态 IP，当前先只配置一个 IP，选择该网卡 `Edit IPv4`，**IPv4 Method** 选择 `Manual`，**Subnet** 为 `192.168.99.0/24`，**Address** 为 `192.168.99.8`，其他项目留空（不使用该网卡访问外网也就不需要设置网关与域名解析）。
+**Proxy** 默认为空。
+**Mirror** 建议修改为 `http://mirrors.aliyun.com/ubuntu`。
 硬盘分区使用默认的 `Use An Entire Disk`。
 创建用户并选择 `Install OpenSSH Server`，从 Github.com 拉取公钥。
 
@@ -128,7 +128,7 @@ sudo nano /etc/netplan/50-cloud-init.yaml
 sudo netplan apply
 ```
 
-如果采用双机部署，请分别安装系统，无需配置多 IP。
+如果采用双机部署，请分别安装系统，无需配置多个 IP。
 
 ### 安装配置 MicroK8s
 
@@ -304,7 +304,7 @@ sudo cp registry.example.com.key registry.example.com.crt /etc/gitlab/ssl/
 
 如果 registry 与 gitlab 使用同一域名则需要，修改：
 
-```ini
+```ruby
 registry_external_url 'https://gitlab.example.com:4567'
 registry_nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlab.example.com.crt"
 registry_nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab.example.com.key"
@@ -405,6 +405,12 @@ kubectl -n gitlab-managed-apps get svc ingress-nginx-ingress-controller
 export EXTERNAL_IP=192.168.99.9
 kubectl -n gitlab-managed-apps patch svc ingress-nginx-ingress-controller -p "{\"spec\": {\"type\": \"LoadBalancer\", \"externalIPs\":[\"$EXTERNAL_IP\"]}}"
 ```
+
+## 部署 Yii2 应用
+
+### 从 GitHub 导入代码
+
+使用 **Import Project** 选择 **Repo by URL** 填入 `https://github.com/larryli/yii2-auto-devops.git` 创建项目。
 
 ## FAQ
 
