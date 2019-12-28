@@ -1,0 +1,5 @@
+dependencies:
+  - name: mysql
+    version: 0.19.2
+    repository: https://mirror.azure.cn/kubernetes/charts/
+    condition: mysql.enabled

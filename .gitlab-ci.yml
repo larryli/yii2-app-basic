@@ -1,0 +1,270 @@
+# https://gitlab.com/gitlab-org/gitlab-foss/blob/master/lib/gitlab/ci/templates/Auto-DevOps.gitlab-ci.yml
+image: alpine:latest
+
+variables:
+  REGISTRY_MIRROR: https://dockerhub.azk8s.cn
+  CHART_MIRROR: https://mirror.azure.cn/kubernetes/charts/
+
+  MYSQL_USER: user
+  MYSQL_PASSWORD: testing-password
+  MYSQL_ENABLED: "true"
+  MYSQL_DB: $CI_ENVIRONMENT_SLUG
+  MYSQL_VERSION: 5.7.14
+
+  DB_INITIALIZE: "/app/yii migrate/up --interactive=0"
+  DB_MIGRATE: "/app/yii migrate/up --interactive=0"
+
+  DOCKER_DRIVER: overlay2
+
+  ROLLOUT_RESOURCE_TYPE: deployment
+
+  DOCKER_TLS_CERTDIR: ""
+
+stages:
+  - build
+  - review
+  - staging
+  - production
+  - incremental rollout 10%
+  - incremental rollout 25%
+  - incremental rollout 50%
+  - incremental rollout 100%
+  - cleanup
+
+# https://gitlab.com/gitlab-org/gitlab-foss/blob/master/lib/gitlab/ci/templates/Jobs/Build.gitlab-ci.yml
+build:
+  stage: build
+  image: "registry.gitlab.com/gitlab-org/cluster-integration/auto-build-image/master:stable"
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_CONCURRENT: 6
+    DOCKER_DAEMON_OPTIONS: "--registry-mirror=${REGISTRY_MIRROR} --insecure-registry=${CI_REGISTRY} --max-concurrent-downloads=${DOCKER_CONCURRENT}"
+  services:
+    # https://gitlab.com/gitlab-org/gitlab-runner/issues/3808#note_244570527
+    - name: docker:stable-dind
+      entrypoint: [ "sh", "-c", "dockerd-entrypoint.sh ${DOCKER_DAEMON_OPTIONS}" ]
+  script:
+    - |
+      if [[ -z "$CI_COMMIT_TAG" ]]; then
+        export CI_APPLICATION_REPOSITORY=${CI_APPLICATION_REPOSITORY:-$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG}
+        export CI_APPLICATION_TAG=${CI_APPLICATION_TAG:-$CI_COMMIT_SHA}
+      else
+        export CI_APPLICATION_REPOSITORY=${CI_APPLICATION_REPOSITORY:-$CI_REGISTRY_IMAGE}
+        export CI_APPLICATION_TAG=${CI_APPLICATION_TAG:-$CI_COMMIT_TAG}
+      fi
+    - ./build.sh
+  only:
+    - branches
+    - tags
+
+# https://gitlab.com/gitlab-org/gitlab-foss/blob/master/lib/gitlab/ci/templates/Jobs/Deploy.gitlab-ci.yml
+.auto-deploy:
+  image: "registry.gitlab.com/gitlab-org/cluster-integration/auto-deploy-image:v0.8.3"
+
+review:
+  extends: .auto-deploy
+  stage: review
+  script:
+    - ./auto-deploy check_kube_domain
+    - ./auto-deploy download_chart
+    - ./auto-deploy ensure_namespace
+    - ./auto-deploy initialize_tiller
+    - ./auto-deploy create_secret
+    - ./auto-deploy deploy
+    - ./auto-deploy persist_environment_url
+  environment:
+    name: review/$CI_COMMIT_REF_NAME
+    url: http://$CI_PROJECT_ID-$CI_ENVIRONMENT_SLUG.$KUBE_INGRESS_BASE_DOMAIN
+    on_stop: stop_review
+  artifacts:
+    paths: [environment_url.txt]
+  only:
+    refs:
+      - branches
+      - tags
+    kubernetes: active
+  except:
+    refs:
+      - master
+    variables:
+      - $REVIEW_DISABLED
+
+stop_review:
+  extends: .auto-deploy
+  stage: cleanup
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - auto-deploy initialize_tiller
+    - auto-deploy delete
+  environment:
+    name: review/$CI_COMMIT_REF_NAME
+    action: stop
+  when: manual
+  allow_failure: true
+  only:
+    refs:
+      - branches
+      - tags
+    kubernetes: active
+  except:
+    refs:
+      - master
+    variables:
+      - $REVIEW_DISABLED
+
+# Staging deploys are disabled by default since
+# continuous deployment to production is enabled by default
+# If you prefer to automatically deploy to staging and
+# only manually promote to production, enable this job by setting
+# STAGING_ENABLED.
+
+staging:
+  extends: .auto-deploy
+  stage: staging
+  script:
+    - ./auto-deploy check_kube_domain
+    - ./auto-deploy download_chart
+    - ./auto-deploy ensure_namespace
+    - ./auto-deploy initialize_tiller
+    - ./auto-deploy create_secret
+    - ./auto-deploy deploy
+  environment:
+    name: staging
+    url: http://$CI_PROJECT_PATH_SLUG-staging.$KUBE_INGRESS_BASE_DOMAIN
+  only:
+    refs:
+      - master
+    kubernetes: active
+    variables:
+      - $STAGING_ENABLED
+
+.production: &production_template
+  extends: .auto-deploy
+  stage: production
+  script:
+    - ./auto-deploy check_kube_domain
+    - ./auto-deploy download_chart
+    - ./auto-deploy ensure_namespace
+    - ./auto-deploy initialize_tiller
+    - ./auto-deploy create_secret
+    - ./auto-deploy deploy
+    - ./auto-deploy delete rollout
+    - ./auto-deploy persist_environment_url
+  environment:
+    name: production
+    url: http://$CI_PROJECT_PATH_SLUG.$KUBE_INGRESS_BASE_DOMAIN
+  artifacts:
+    paths: [environment_url.txt]
+
+production:
+  <<: *production_template
+  only:
+    refs:
+      - master
+    kubernetes: active
+  except:
+    variables:
+      - $STAGING_ENABLED
+      - $INCREMENTAL_ROLLOUT_MODE
+
+production_manual:
+  <<: *production_template
+  when: manual
+  allow_failure: false
+  only:
+    refs:
+      - master
+    kubernetes: active
+    variables:
+      - $STAGING_ENABLED
+  except:
+    variables:
+      - $INCREMENTAL_ROLLOUT_MODE
+
+.rollout: &rollout_template
+  extends: .auto-deploy
+  script:
+    - ./auto-deploy check_kube_domain
+    - ./auto-deploy download_chart
+    - ./auto-deploy ensure_namespace
+    - ./auto-deploy initialize_tiller
+    - ./auto-deploy create_secret
+    - ./auto-deploy deploy rollout $ROLLOUT_PERCENTAGE
+    - ./auto-deploy scale stable $((100-ROLLOUT_PERCENTAGE))
+    - ./auto-deploy persist_environment_url
+  environment:
+    name: production
+    url: http://$CI_PROJECT_PATH_SLUG.$KUBE_INGRESS_BASE_DOMAIN
+  artifacts:
+    paths: [environment_url.txt]
+
+.manual_rollout_template: &manual_rollout_template
+  <<: *rollout_template
+  stage: production
+  when: manual
+  only:
+    refs:
+      - master
+    kubernetes: active
+    variables:
+      - $INCREMENTAL_ROLLOUT_MODE == "manual"
+  except:
+    variables:
+      - $INCREMENTAL_ROLLOUT_MODE == "timed"
+
+.timed_rollout_template: &timed_rollout_template
+  <<: *rollout_template
+  when: delayed
+  start_in: 5 minutes
+  only:
+    refs:
+      - master
+    kubernetes: active
+    variables:
+      - $INCREMENTAL_ROLLOUT_MODE == "timed"
+
+timed rollout 10%:
+  <<: *timed_rollout_template
+  stage: incremental rollout 10%
+  variables:
+    ROLLOUT_PERCENTAGE: 10
+
+timed rollout 25%:
+  <<: *timed_rollout_template
+  stage: incremental rollout 25%
+  variables:
+    ROLLOUT_PERCENTAGE: 25
+
+timed rollout 50%:
+  <<: *timed_rollout_template
+  stage: incremental rollout 50%
+  variables:
+    ROLLOUT_PERCENTAGE: 50
+
+timed rollout 100%:
+  <<: *timed_rollout_template
+  <<: *production_template
+  stage: incremental rollout 100%
+  variables:
+    ROLLOUT_PERCENTAGE: 100
+
+rollout 10%:
+  <<: *manual_rollout_template
+  variables:
+    ROLLOUT_PERCENTAGE: 10
+
+rollout 25%:
+  <<: *manual_rollout_template
+  variables:
+    ROLLOUT_PERCENTAGE: 25
+
+rollout 50%:
+  <<: *manual_rollout_template
+  variables:
+    ROLLOUT_PERCENTAGE: 50
+
+rollout 100%:
+  <<: *manual_rollout_template
+  <<: *production_template
+  allow_failure: false

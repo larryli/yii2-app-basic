@@ -1,0 +1,38 @@
+# nginx/yii2 nginx config
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: nginx-config
+data:
+  nginx.conf: |
+    events {
+    }
+    http {
+      include /etc/nginx/mime.types; 
+      server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+        server_name _;
+
+        root /var/www/html/web;
+
+        index index.php;
+
+        location / {
+            try_files $uri $uri/ /index.php$is_args$args;
+        }
+
+        location ~ \.php$ {
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME /app/web/$fastcgi_script_name;
+            fastcgi_param DOCUMENT_ROOT /app/web;
+            fastcgi_pass 127.0.0.1:9000;
+            try_files $uri =404;
+        }
+
+        # Yii2 assets
+        location /assets/ {
+            alias /var/www/assets/;
+        }
+      }
+    }

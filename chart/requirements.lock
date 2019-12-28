@@ -1,0 +1,6 @@
+dependencies:
+- name: mysql
+  repository: https://mirror.azure.cn/kubernetes/charts/
+  version: 0.19.2
+digest: sha256:093d48d9350e3259d9fb423f68c6ed27a7611b30fbdac05b97d2cd1fe2f64234
+generated: "2019-12-29T03:45:10.3271811+08:00"
