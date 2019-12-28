@@ -221,7 +221,7 @@ sudo microk8s.enable dns storage
 
 在宿主机本地测试 `kubectl -n kube-system get pods` 命令。
 
-### 安装配置 GitLab。
+### 安装配置 GitLab CE
 
 增加软件源并指定域名安装：
 
@@ -235,7 +235,7 @@ sudo apt-get update
 sudo EXTERNAL_URL=$GITLAB_URL apt-get install gitlab-ce
 ```
 
-参见 [https://about.gitlab.com/install/#ubuntu](https://about.gitlab.com/install/#ubuntu) 与 [https://mirrors.tuna.tsinghua.edu.cn/help/gitlab-ce/](https://mirrors.tuna.tsinghua.edu.cn/help/gitlab-ce/) 说明。
+参见 [https://about.gitlab.com/install/#ubuntu?version=ce](https://about.gitlab.com/install/#ubuntu?version=ce) 与 [https://mirrors.tuna.tsinghua.edu.cn/help/gitlab-ce/](https://mirrors.tuna.tsinghua.edu.cn/help/gitlab-ce/) 说明。
 
 修改 gitlab 配置：
 
@@ -286,6 +286,31 @@ sudo gitlab-ctl reconfigure
 ```
 
 可以使用 `sudo gitlab-ctl diff-config` 查看配置修改项。
+
+默认情况下，使用 `EXTERNAL_URL` 为 https 时，GitLab Omnibus 可以使用 [Let’s Encrypt ](https://docs.gitlab.com/omnibus/settings/ssl.html#lets-encrypt-integration) 自动配置 SSL 证书。但这需要外网 IP 且 `80` 与 `443` 端口可用（不能修改为其他端口）。
+
+对于内网和虚拟机环境，采用自有域名和手工申请的 SSL 证书可以减少无 https 需要 insecure-registry 的额外设置。
+
+安装完成 gitlab 后，需要先解压复制到 `/etc/gitlab/ssl` 目录：
+
+```bash
+sudo mkdir -p /etc/gitlab/ssl
+sudo chmod 700 /etc/gitlab/ssl
+sudo cp gitlab.example.com.key gitlab.example.com.crt /etc/gitlab/ssl/
+sudo cp registry.example.com.key registry.example.com.crt /etc/gitlab/ssl/
+```
+
+参见 [https://docs.gitlab.com/omnibus/settings/nginx.html#manually-configuring-https]https://docs.gitlab.com/omnibus/settings/nginx.html#manually-configuring-https)
+
+如果 registry 与 gitlab 使用同一域名则需要，修改：
+
+```ini
+registry_external_url 'https://gitlab.example.com:4567'
+registry_nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlab.example.com.crt"
+registry_nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab.example.com.key"
+```
+
+参见 [https://docs.gitlab.com/ee/administration/packages/container_registry.html#configure-container-registry-under-an-existing-gitlab-domain](https://docs.gitlab.com/ee/administration/packages/container_registry.html#configure-container-registry-under-an-existing-gitlab-domain)
 
 ### 在 GitLab 上配置 Kubernetes
 
@@ -434,13 +459,19 @@ docker push $CI_REGISTRY/$PROJECT/$BRANCH:builder
 在本地使用 helm 清除（请先配置 kubectl config）：
 
 ```bash
+export CHART_MIRROR=https://mirror.azure.cn/kubernetes/charts/
 export KUBE_NAMESPACE=1-root-yii2-staging
+export CHART_NAME=staging
 export TILLER_NAMESPACE=$KUBE_NAMESPACE
 tiller -listen localhost:44134 &
 export HELM_HOST="localhost:44134"
-helm init --client-only
+helm init --client-only --stable-repo-url $CHART_MIRROR
 helm ls
-helm delete staging --purge --tiller-namespace $KUBE_NAMESPACE
+helm delete $CHART_NAME --purge --tiller-namespace $KUBE_NAMESPACE
 ```
 
 参见 [https://gitlab.com/gitlab-org/gitlab-foss/issues/54760](https://gitlab.com/gitlab-org/gitlab-foss/issues/54760)
+
+## 感谢
+
+对上文中提到的所有 mirrors 维护者表示衷心的感谢！
