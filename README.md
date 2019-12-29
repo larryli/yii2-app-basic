@@ -437,21 +437,24 @@ kubectl -n gitlab-managed-apps patch svc ingress-nginx-ingress-controller -p "{\
 *Continuous deployment to production using timed incremental rollout* | `timed` | `false`
 *Automatic deployment to staging, manual deployment to production* | `manual` | `true`
 
-所以，部署方式实际会下列可能：
+参见 [https://docs.gitlab.com/ce/topics/autodevops/#deployment-strategy](https://docs.gitlab.com/ce/topics/autodevops/#deployment-strategy)
 
-staging | production | **Deployment strategy** | `INCREMENTAL_ROLLOUT_MODE` | `STAGING_ENABLED`
+所以，部署方式实际会有下列可能：
+
+**Deployment strategy** | `INCREMENTAL_ROLLOUT_MODE` | `STAGING_ENABLED` | staging | production 
 --- | --- | --- | --- | ---
-无 | 自动部署 | *Continuous deployment to production* | - | -
-无 | 手动部署 | *Continuous deployment to production* | `manual` | -
-无 | 定时增量部署 | *Continuous deployment to production using timed incremental rollout* | `timed` | -
-无 | 手动增量部署 | *Continuous deployment to production using timed incremental rollout* | `manual` | -
-无 | 手动增量部署 | *Automatic deployment to staging, manual deployment to production* | - | `false`
-自动部署 | 手动部署 | *Continuous deployment to production* | - | `true`
-自动部署 | 定时增量部署 | *Continuous deployment to production using timed incremental rollout* | - | `true`
-自动部署 | 定时增量部署 | *Automatic deployment to staging, manual deployment to production* | `timed` | -
-自动部署 | 手动增量部署 | *Automatic deployment to staging, manual deployment to production* | - | -
+*Continuous deployment to production* | - | - | 无 | 自动部署
+*Continuous deployment to production* | - | `true` | 自动部署 | 手动部署
+*Continuous deployment to production* | `manual` | - | 无 | 手动增量部署
+*Continuous deployment to production* | `manual` | `true` | 自动部署 | 手动增量部署
+*Continuous deployment to production using timed incremental rollout* | - | - | 无 | 定时增量部署
+*Continuous deployment to production using timed incremental rollout* | - | `true` | 自动部署 | 定时增量部署
+*Automatic deployment to staging, manual deployment to production* | - | `false` | 无 | 手动增量部署
+*Automatic deployment to staging, manual deployment to production* | - | - | 自动部署 | 手动增量部署
 
 实际六种部署方式，请按照需要预先选择好部署方式。
+
+参见 [https://docs.gitlab.com/ce/topics/autodevops/#incremental-rollout-to-production-premium](https://docs.gitlab.com/ce/topics/autodevops/#incremental-rollout-to-production-premium)
 
 对于增加部署，可选的 `ROLLOUT_STATUS_DISABLED` = `true` 可以在部署日志中不显示状态信息。
 
@@ -514,6 +517,10 @@ staging | production | **Deployment strategy** | `INCREMENTAL_ROLLOUT_MODE` | `S
 注意：当前项目并未配置 postfix 或 smtp，所以无法发送邮件。
 
 ### 构建与部署技术架构
+
+文档待完成。
+
+### 未完事项
 
 文档待完成。
 
