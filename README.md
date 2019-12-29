@@ -480,10 +480,12 @@ kubectl -n gitlab-managed-apps patch svc ingress-nginx-ingress-controller -p "{\
 
 #### 数据库初始化与迁移
 
-对于 Yii2 来说，均采用了同一脚本，即：
+对于 Yii2 来说，均采用了相同脚本，即：
 
-- `DB_INITIALIZE` = `"/app/yii migrate/up --interactive=0"`
+- `DB_INITIALIZE` = `"/app/wait-for -- /app/yii migrate/up --interactive=0"`
 - `DB_MIGRATE` = `"/app/yii migrate/up --interactive=0"`
+
+其中 `DB_INITIALIZE` 使用了特殊的 `wait-for` 脚本等待 Kubernetes 创建 MySQL 服务成功。
 
 使用默认值即可，一般无需修改。
 
