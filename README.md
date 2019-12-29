@@ -518,11 +518,35 @@ kubectl -n gitlab-managed-apps patch svc ingress-nginx-ingress-controller -p "{\
 
 ### 构建与部署技术架构
 
-文档待完成。
+#### 自定义 .gitlab-ci.yml
+
+#### 自定义 Dockerfile
+
+#### 自定义 build.sh
+
+#### 自定义 chart
+
+#### 自定义 auto-devops
 
 ### 未完事项
 
-文档待完成。
+### SSL 证书
+
+#### 缓存 Cache
+
+#### 会话 Session
+
+#### 上传文件 Upload
+
+#### 定时任务
+
+#### 后台队列处理
+
+#### Assets 构建
+
+#### SMTP 邮件发送
+
+#### 附加 nginx 模块
 
 ## FAQ
 
