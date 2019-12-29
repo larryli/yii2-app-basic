@@ -6,7 +6,7 @@ PORT=3306
 
 # https://github.com/eficode/wait-for/blob/master/wait-for
 
-TIMEOUT=15
+TIMEOUT=1500
 QUIET=0
 
 echoerr() {

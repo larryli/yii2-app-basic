@@ -8,7 +8,7 @@ Key | Value
 --- | ---
 `ADDITIONAL_HOSTS` | custom domains, comma-separated, usually with **Scope**
 `<env>_ADDITIONAL_HOSTS` | custom domains for env, such as `PRODUCTION_ADDITIONAL_HOSTS`
-`DB_INITIALIZE` | default `/app/yii migrate/up --interactive=0`
+`DB_INITIALIZE` | default `/app/wait-for -- /app/yii migrate/up --interactive=0`
 `DB_MIGRATE` | default `/app/yii migrate/up --interactive=0`
 `INCREMENTAL_ROLLOUT_MODE` | default `timed` when **Deployment strategy** of **CI / CD Settings** is "*Continuous deployment to production using timed incremental rollout*", otherwise default `manual` when **Deployment strategy** is "*Automatic deployment to staging, manual deployment to production*", set `timed` enable timed rollout for production, set `manual` enable manual rollout for production  
 `K8S_SECRET_COOKIE_VALIDATION_KEY` | must be set a string, suggest with **Masked**
