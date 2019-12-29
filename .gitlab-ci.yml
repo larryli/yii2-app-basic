@@ -11,7 +11,7 @@ variables:
   MYSQL_DB: $CI_ENVIRONMENT_SLUG
   MYSQL_VERSION: 5.7.14
 
-  DB_INITIALIZE: "/app/yii migrate/up --interactive=0"
+  DB_INITIALIZE: "/app/wait-for -- /app/yii migrate/up --interactive=0"
   DB_MIGRATE: "/app/yii migrate/up --interactive=0"
 
   DOCKER_DRIVER: overlay2
