@@ -556,21 +556,93 @@ kubectl -n gitlab-managed-apps patch svc ingress-nginx-ingress-controller -p "{\
 
 ### SSL 证书
 
+当前默认启用了 TLS（即 https 访问），启用 Cert-Manager 管理证书（自动从 Let's Encrypt 申请）。**禁用**了 `nginx.ingress.kubernetes.io/ssl-redirect`（即访问 http 自动跳转 https）。
+
+后续需要：
+
+- 可配置的 `ssl-redirect`
+- 给 `ADDITIONAL_HOSTS` 配置指定的 SSL 证书（另外申请，如泛域名证书）
+
 #### 缓存 Cache
+
+当前直接使用的文件缓存，也就是缓存只存在与 pod 内部。在 scale 后无法在多个 pod 之间共享缓存，也就是无法利用缓存在不同请求之间交换数据。
+
+注意：仅仅作为临时缓存（如页面缓存），除了性能问题是不存在其他问题的。
+
+后续：
+
+- 配置 Memcached 服务，并配置 Yii2 缓存组件
+
+可选配置 Redis 缓存，谨慎使用 MySQL 数据库缓存。不建议使用 php apc/zend 等 PHP 扩展缓存（和文件缓存一样仅支持单机）。
 
 #### 会话 Session
 
+当前直接用 PHP 系统会话，与缓存一样只支持单机。
+
+后续：
+
+- 配置 Redis 服务，并配置 Yii2 会话组件
+
+可选配置 MySQL 数据库会话。使用缓存会话组件时一定要注意缓存组件本身是不是支持 scale。
+
+#### MongoDb
+
+后续：
+
+- 配置 MongoDb 服务
+
+可选替换数据库、缓存、会话等组件。
+
 #### 上传文件 Upload
+
+PHP 上传文件到 Nginx 下载。
+
+后续：
+
+- 配置持久化卷同时挂载到 Nginx 和 App
 
 #### 定时任务
 
+增加定时任务。
+
+后续：
+
+- 配置定时任务
+
 #### 后台队列处理
+
+增加后台服务。
+
+后续：
+
+- 配置 beanstalkd 服务，并配置 yii2-queue 队列组件与后台队列服务
+
+可选配置 redis 队列。不建议使用数据库队列（性能问题）。
 
 #### Assets 构建
 
+Yii2 支持 `yii asset/compress` 打包 css/js 资源。
+
+后续：
+
+- 在构建时预先打包资源
+
 #### SMTP 邮件发送
 
-#### 附加 nginx 模块
+邮件发送功能。
+
+后续：
+
+- 配置 SMTP 参数
+
+#### 附加 Nginx 模块
+
+定制化 Nginx 映像，增加 Nchan 组件。
+
+后续：
+
+- 构建额外的 Nginx 映像（使用其他项目或分支）
+- 配置 Nginx 映像
 
 ## FAQ
 
