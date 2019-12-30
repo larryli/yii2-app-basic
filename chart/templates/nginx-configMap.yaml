@@ -1,17 +1,20 @@
 # nginx/yii2 nginx config
-kind: ConfigMap
 apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: nginx-config
+  name: {{ template "trackableappname" . }}-nginx-config
+  labels:
+    app: {{ template "appname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version| replace "+" "_" }}"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
 data:
   nginx.conf: |
-    events {
-    }
+    events {}
     http {
       include /etc/nginx/mime.types; 
       server {
-        listen 80 default_server;
-        listen [::]:80 default_server;
+        listen {{ .Values.service.internalPort }} default_server;
         server_name _;
 
         root /var/www/html/web;

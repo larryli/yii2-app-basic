@@ -42,7 +42,7 @@ spec:
         # Add the nginx/yii2 ConfigMap as a volume for the nginx pod
         - name: nginx-config-volume
           configMap:
-            name: nginx-config
+            name: {{ template "trackableappname" . }}-nginx-config
       containers:
       # App (php-fpm)
       - name: {{ .Chart.Name }}
