@@ -37,9 +37,9 @@ spec:
         - name: MYSQL_HOST
           value: {{ .Values.application.mysqlHost | quote }}
         - name: MYSQL_USER
-          value: {{ .Values.application.mysqlUser | quote }}
+          value: {{ .Values.mysql.mysqlUser | quote }}
         - name: MYSQL_PASSWORD
-          value: {{ .Values.application.mysqlPassword | quote }}
+          value: {{ .Values.mysql.mysqlPassword | quote }}
         - name: MYSQL_DB
-          value: {{ .Values.application.mysqlDatabase | quote }}
+          value: {{ .Values.mysql.mysqlDatabase | quote }}
 {{- end -}}

@@ -186,9 +186,6 @@ function deploy() {
       --set mysql.mysqlDatabase="$MYSQL_DB" \
       --set mysql.imageTag="$MYSQL_VERSION" \
       --set application.mysqlHost="$MYSQL_HOST" \
-      --set application.mysqlUser="$MYSQL_USER" \
-      --set application.mysqlPassword="$MYSQL_PASSWORD" \
-      --set application.mysqlDatabase="$MYSQL_DB" \
       --set application.initializeCommand="$DB_INITIALIZE" \
       --set ingress.modSecurity.enabled="$modsecurity_enabled" \
       --set ingress.modSecurity.secRuleEngine="$AUTO_DEVOPS_MODSECURITY_SEC_RULE_ENGINE" \
@@ -227,9 +224,6 @@ function deploy() {
     --set mysql.mysqlDatabase="$MYSQL_DB" \
     --set mysql.imageTag="$MYSQL_VERSION" \
     --set application.mysqlHost="$MYSQL_HOST" \
-    --set application.mysqlUser="$MYSQL_USER" \
-    --set application.mysqlPassword="$MYSQL_PASSWORD" \
-    --set application.mysqlDatabase="$MYSQL_DB" \
     --set application.initializeCommand="" \
     --set application.migrateCommand="$DB_MIGRATE" \
     --set ingress.modSecurity.enabled="$modsecurity_enabled" \
