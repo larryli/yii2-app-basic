@@ -453,6 +453,32 @@ kubectl -n gitlab-managed-apps patch svc ingress-nginx-ingress-controller -p "{\
 
 `<env>_ADDITIONAL_HOSTS` 的优先级要比 `ADDITIONAL_HOSTS` 高。
 
+#### https 访问 与 SSL 证书
+
+当前默认启用了 TLS（即 https 访问）和启用 Cert-Manager 管理证书（自动从 Let's Encrypt 申请）。**禁用**了 `nginx.ingress.kubernetes.io/ssl-redirect`（即访问 http 自动跳转 https）。
+
+可以使用 `TLS_SSL_REDIRECT` = `true` 开启 http 自动调整 https。
+
+使用 `TLS_ENABLED` = `false` 关闭 https。
+
+使用 `TLS_ACME` = `false` 禁用 Cert-Manager 自动从 Let's Encrypt 申请证书。
+
+使用单独指定 **Scope** 的 `TLS_SECRET_NAME` 或具体 `<env>_TLS_SECRET_NAME` 如 `PRODUCTION_TLS_SECRET_NAME` 设置部署应用的 SSL 证书 secret name。
+
+请先下面的命令创建 secret name：
+
+```bash
+export KUBE_NAMESPACE=yii2-auto-devops-1-production
+export TLS_SECRET_NAME=production-tls
+export CERT_FILE=~/production.crt
+export KEY_FILE=~/production.key
+kubectl -n $KUBE_NAMESPACE create secret tls $TLS_SECRET_NAME --cert=$CERT_FILE --key=$KEY_FILE
+```
+
+`<env>_TLS_SECRET_NAME` 的优先级要比 `TLS_SECRET_NAME` 高。
+
+当指定 `TLS_SECRET_NAME` 时会强制 `TLS_ENABLED` = `true` 和 `TLS_ACME` = `false`。
+
 #### MySQL 数据库
 
 可以使用 `MYSQL_ENABLED` = `false` 关闭默认的自动部署 MySQL 服务，从而使用外部 MySQL（可以手工在同一 Kubernets 上安装，也可以使用现有服务）。
@@ -553,15 +579,6 @@ kubectl -n gitlab-managed-apps patch svc ingress-nginx-ingress-controller -p "{\
 除了 `.gitlab-ci.yml` 文件需要在每个项目复制一份以外。可以类似 GitLab 官方项目创建 `auto-build-image`、`auto-deploy-image` 与 `auto-deploy-app` 三个项目。前两项在 `build` 和 `.auto-deploy` 下直接修改对应的 `image` 即可。最后一项可以在 `variables` 中定义 `AUTO_DEVOPS_CHART` 相关变量（需要自建 chart 仓库）。
 
 ### 未完事项
-
-### SSL 证书
-
-当前默认启用了 TLS（即 https 访问），启用 Cert-Manager 管理证书（自动从 Let's Encrypt 申请）。**禁用**了 `nginx.ingress.kubernetes.io/ssl-redirect`（即访问 http 自动跳转 https）。
-
-后续需要：
-
-- 可配置的 `ssl-redirect`
-- 给 `ADDITIONAL_HOSTS` 配置指定的 SSL 证书（另外申请，如泛域名证书）
 
 #### 缓存 Cache
 
