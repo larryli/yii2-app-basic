@@ -14,6 +14,10 @@ variables:
   DB_INITIALIZE: "/app/wait-for -- /app/yii migrate/up --interactive=0"
   DB_MIGRATE: "/app/yii migrate/up --interactive=0"
 
+  TLS_ENABLED: "true"
+  TLS_ACME: "true"
+  TLS_SSL_REDIRECT: "false"
+
   DOCKER_DRIVER: overlay2
 
   ROLLOUT_RESOURCE_TYPE: deployment

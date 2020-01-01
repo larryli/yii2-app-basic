@@ -148,6 +148,20 @@ function deploy() {
     additional_hosts="{$ADDITIONAL_HOSTS}"
   fi
 
+  local tls_secret_name
+  eval local env_TLS_SECRET_NAME="\$${env_slug}_TLS_SECRET_NAME"
+  if [ -n "$env_TLS_SECRET_NAME" ]; then
+    tls_secret_name="$env_TLS_SECRET_NAME"
+  elif [ -n "$TLS_SECRET_NAME" ]; then
+    tls_secret_name="$TLS_SECRET_NAME"
+  fi
+  local tls_enabled="$TLS_ENABLED"
+  local tls_acme="$TLS_ACME"
+  if [[ ! -z "$tls_secret_name" ]]; then
+    tls_acme="false"
+    tls_enabled="true"
+  fi
+
   local helm_values_args=()
   local helm_values_file=${HELM_UPGRADE_VALUES_FILE:-.gitlab/auto-deploy-values.yaml}
   if [[ -f "${helm_values_file}" ]]; then
@@ -187,6 +201,11 @@ function deploy() {
       --set mysql.imageTag="$MYSQL_VERSION" \
       --set application.mysqlHost="$MYSQL_HOST" \
       --set application.initializeCommand="$DB_INITIALIZE" \
+      --set ingress.tls.enabled="$tls_enabled" \
+      --set ingress.tls.secretName="$tls_secret_name" \
+      --set ingress.annotations."kubernetes\.io/ingress\.class"="nginx" \
+      --set-string ingress.annotations."kubernetes\.io/tls-acme"="$tls_acme" \
+      --set-string ingress.annotations."nginx\.ingress\.kubernetes\.io/ssl-redirect"="$TLS_SSL_REDIRECT" \
       --set ingress.modSecurity.enabled="$modsecurity_enabled" \
       --set ingress.modSecurity.secRuleEngine="$AUTO_DEVOPS_MODSECURITY_SEC_RULE_ENGINE" \
       "${helm_values_args[@]}" \
@@ -226,6 +245,11 @@ function deploy() {
     --set application.mysqlHost="$MYSQL_HOST" \
     --set application.initializeCommand="" \
     --set application.migrateCommand="$DB_MIGRATE" \
+    --set ingress.tls.enabled="$tls_enabled" \
+    --set ingress.tls.secretName="$tls_secret_name" \
+    --set ingress.annotations."kubernetes\.io/ingress\.class"="nginx" \
+    --set-string ingress.annotations."kubernetes\.io/tls-acme"="$tls_acme" \
+    --set-string ingress.annotations."nginx\.ingress\.kubernetes\.io/ssl-redirect"="$TLS_SSL_REDIRECT" \
     --set ingress.modSecurity.enabled="$modsecurity_enabled" \
     --set ingress.modSecurity.secRuleEngine="$AUTO_DEVOPS_MODSECURITY_SEC_RULE_ENGINE" \
     "${helm_values_args[@]}" \
