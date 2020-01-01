@@ -30,3 +30,8 @@ Key | Value
 `REVIEW_DISABLED` | default `false`, set `true` disable auto deploy review app on branch
 `ROLLOUT_STATUS_DISABLED` | default `false`, set `true` do not show rollout status on deploy
 `STAGING_ENABLED` | default `true` when **Deployment strategy** of **CI / CD Settings** is "*Automatic deployment to staging, manual deployment to production*", otherwise default `false`, set `true` enable staging
+`TLS_ACME` | default `true`, set `false` to disable apply cert and key by acme
+`TLS_ENABLE` | default `true`, set `false` to disable tls
+`TLS_SECRET_NAME` | custom secret name of the tls cert and key
+`<env>_TLS_SECRET_NAME` | custom secret name for env, such as `PRODUCTION_TLS_SECRET_NAME`
+`TLS_SSL_REDIRECT` | default `false`, set `true` to enable redirect 443 from 80
