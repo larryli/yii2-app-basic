@@ -457,7 +457,7 @@ kubectl -n gitlab-managed-apps patch svc ingress-nginx-ingress-controller -p "{\
 
 当前默认启用了 TLS（即 https 访问）和启用 Cert-Manager 管理证书（自动从 Let's Encrypt 申请）。**禁用**了 `nginx.ingress.kubernetes.io/ssl-redirect`（即访问 http 自动跳转 https）。
 
-可以使用 `TLS_SSL_REDIRECT` = `true` 开启 http 自动调整 https。
+可以使用 `TLS_SSL_REDIRECT` = `true` 开启 http 自动跳转 https。
 
 使用 `TLS_ENABLED` = `false` 关闭 https。
 
@@ -465,13 +465,13 @@ kubectl -n gitlab-managed-apps patch svc ingress-nginx-ingress-controller -p "{\
 
 使用单独指定 **Scope** 的 `TLS_SECRET_NAME` 或具体 `<env>_TLS_SECRET_NAME` 如 `PRODUCTION_TLS_SECRET_NAME` 设置部署应用的 SSL 证书 secret name。
 
-请先下面的命令创建 secret name：
+请先下面的命令创建 secret tls 存放对应的证书与私钥：
 
 ```bash
 export KUBE_NAMESPACE=yii2-auto-devops-1-production
 export TLS_SECRET_NAME=production-tls
-export CERT_FILE=~/production.crt
-export KEY_FILE=~/production.key
+export CERT_FILE=$HOME/ssl-certs/example.com.crt
+export KEY_FILE=$HOME/ssl-certs/example.com.key
 kubectl -n $KUBE_NAMESPACE create secret tls $TLS_SECRET_NAME --cert=$CERT_FILE --key=$KEY_FILE
 ```
 
