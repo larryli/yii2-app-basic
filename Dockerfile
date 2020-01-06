@@ -21,8 +21,7 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
         libzip-dev \
     && docker-php-ext-configure intl \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) iconv \
-        intl \
+    && docker-php-ext-install -j$(nproc) intl \
         gd \
         pdo_mysql \
         zip
