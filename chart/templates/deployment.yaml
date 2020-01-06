@@ -64,6 +64,10 @@ spec:
           value: {{ .Values.mysql.mysqlPassword | quote }}
         - name: MYSQL_DB
           value: {{ .Values.mysql.mysqlDatabase | quote }}
+        - name: REDIS_HOST
+          value: {{ .Values.application.redisHost | quote }}
+        - name: REDIS_PASSWORD
+          value: {{ .Values.redis.password | quote }}
         - name: GITLAB_ENVIRONMENT_NAME
           value: {{ .Values.gitlab.envName }}
         - name: GITLAB_ENVIRONMENT_URL
@@ -81,7 +85,7 @@ spec:
         resources:
 {{ toYaml .Values.resources | indent 12 }}
       - name: {{ .Chart.Name }}-nginx
-        image: nginx:1.14
+        image: "{{ .Values.image.repository }}:nginx"
         volumeMounts:
         - name: assets
           mountPath: /var/www/assets
@@ -93,6 +97,8 @@ spec:
         ports:
         - name: "{{ .Values.service.name }}"
           containerPort: {{ .Values.service.internalPort }}
+        - name: "nchan"
+          containerPort: 9090
         livenessProbe:
 {{- if eq .Values.livenessProbe.probeType "httpGet" }}
           httpGet:

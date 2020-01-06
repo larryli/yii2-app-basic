@@ -6,6 +6,9 @@
 export RELEASE_NAME=${HELM_RELEASE_NAME:-$CI_ENVIRONMENT_SLUG}
 auto_mysql_host=${RELEASE_NAME}-mysql
 export MYSQL_HOST=${MYSQL_HOST-$auto_mysql_host}
+auto_redis_host=${RELEASE_NAME}-redis-master
+export REDIS_HOST=${REDIS_HOST-$auto_redis_host}
+auto_nchan_host=${RELEASE_NAME}-auto-deploy
 export TILLER_NAMESPACE=$KUBE_NAMESPACE
 export HELM_HOST="localhost:44134"
 
@@ -113,12 +116,14 @@ function deploy() {
 
   local service_enabled="true"
   local mysql_enabled="$MYSQL_ENABLED"
+  local redis_enabled="$REDIS_ENABLED"
 
   # if track is different than stable,
   # re-use all attached resources
   if [[ "$track" != "stable" ]]; then
     service_enabled="false"
     mysql_enabled="false"
+    redis_enabled="false"
   fi
 
   local replicas
@@ -157,9 +162,14 @@ function deploy() {
   fi
   local tls_enabled="$TLS_ENABLED"
   local tls_acme="$TLS_ACME"
+  local tls_ssl_redirect="$TLS_SSL_REDIRECT"
   if [[ ! -z "$tls_secret_name" ]]; then
     tls_acme="false"
     tls_enabled="true"
+  fi
+  if [[ "$tls_enabled" == "false" ]]; then
+    tls_acme="false"
+    tls_ssl_redirect="false"
   fi
 
   local helm_values_args=()
@@ -201,11 +211,16 @@ function deploy() {
       --set mysql.imageTag="$MYSQL_VERSION" \
       --set application.mysqlHost="$MYSQL_HOST" \
       --set application.initializeCommand="$DB_INITIALIZE" \
+      --set redis.enabled="$redis_enabled" \
+      --set redis.nameOverride="redis" \
+      --set redis.password="$REDIS_PASSWORD" \
+      --set redis.imageTag="$REDIS_VERSION" \
+      --set application.redisHost="$REDIS_HOST" \
       --set ingress.tls.enabled="$tls_enabled" \
       --set ingress.tls.secretName="$tls_secret_name" \
       --set ingress.annotations."kubernetes\.io/ingress\.class"="nginx" \
       --set-string ingress.annotations."kubernetes\.io/tls-acme"="$tls_acme" \
-      --set-string ingress.annotations."nginx\.ingress\.kubernetes\.io/ssl-redirect"="$TLS_SSL_REDIRECT" \
+      --set-string ingress.annotations."nginx\.ingress\.kubernetes\.io/ssl-redirect"="$tls_ssl_redirect" \
       --set ingress.modSecurity.enabled="$modsecurity_enabled" \
       --set ingress.modSecurity.secRuleEngine="$AUTO_DEVOPS_MODSECURITY_SEC_RULE_ENGINE" \
       "${helm_values_args[@]}" \
@@ -218,6 +233,7 @@ function deploy() {
   echo "Deploying new $track release..."
   # shellcheck disable=SC2086 # HELM_UPGRADE_EXTRA_ARGS -- double quote variables to prevent globbing
   helm upgrade --install \
+    --force \
     --wait \
     --set service.enabled="$service_enabled" \
     --set gitlab.app="$CI_PROJECT_PATH_SLUG" \
@@ -245,11 +261,20 @@ function deploy() {
     --set application.mysqlHost="$MYSQL_HOST" \
     --set application.initializeCommand="" \
     --set application.migrateCommand="$DB_MIGRATE" \
+    --set application.cronCommand="$CRON_CMD" \
+    --set application.cronSchedule="'$CORN_SCHEDULE'" \
+    --set application.queueCommand="$QUEUE_CMD" \
+    --set redis.enabled="$redis_enabled" \
+    --set redis.nameOverride="redis" \
+    --set redis.password="$REDIS_PASSWORD" \
+    --set redis.imageTag="$REDIS_VERSION" \
+    --set application.redisHost="$REDIS_HOST" \
+    --set application.nchanHost="$auto_nchan_host" \
     --set ingress.tls.enabled="$tls_enabled" \
     --set ingress.tls.secretName="$tls_secret_name" \
     --set ingress.annotations."kubernetes\.io/ingress\.class"="nginx" \
     --set-string ingress.annotations."kubernetes\.io/tls-acme"="$tls_acme" \
-    --set-string ingress.annotations."nginx\.ingress\.kubernetes\.io/ssl-redirect"="$TLS_SSL_REDIRECT" \
+    --set-string ingress.annotations."nginx\.ingress\.kubernetes\.io/ssl-redirect"="$tls_ssl_redirect" \
     --set ingress.modSecurity.enabled="$modsecurity_enabled" \
     --set ingress.modSecurity.secRuleEngine="$AUTO_DEVOPS_MODSECURITY_SEC_RULE_ENGINE" \
     "${helm_values_args[@]}" \

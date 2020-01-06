@@ -1,0 +1,48 @@
+{{- if and .Values.application.cronCommand .Values.application.cronSchedule -}}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ template "trackableappname" . }}-cron
+  labels:
+    app: {{ template "appname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version| replace "+" "_" }}"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  schedule: {{ .Values.application.cronSchedule }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: {{ template "appname" . }}
+            release: {{ .Release.Name }}
+        spec:
+          restartPolicy: Never
+          imagePullSecrets:
+{{ toYaml .Values.image.secrets | indent 14 }}
+          containers:
+          - name: {{ .Chart.Name }}
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+            command: ["/bin/sh"]
+            args: ["-c", "{{ .Values.application.cronCommand }}"]
+            imagePullPolicy: {{ .Values.image.pullPolicy }}
+            {{- if .Values.application.secretName }}
+            envFrom:
+            - secretRef:
+                name: {{ .Values.application.secretName }}
+            {{- end }}
+            env:
+            - name: MYSQL_HOST
+              value: {{ .Values.application.mysqlHost | quote }}
+            - name: MYSQL_USER
+              value: {{ .Values.mysql.mysqlUser | quote }}
+            - name: MYSQL_PASSWORD
+              value: {{ .Values.mysql.mysqlPassword | quote }}
+            - name: MYSQL_DB
+              value: {{ .Values.mysql.mysqlDatabase | quote }}
+            - name: REDIS_HOST
+              value: {{ .Values.application.redisHost | quote }}
+            - name: REDIS_PASSWORD
+              value: {{ .Values.redis.password | quote }}
+{{- end -}}

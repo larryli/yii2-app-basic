@@ -30,7 +30,8 @@ fi
 docker image pull "$CI_APPLICATION_REPOSITORY:composer" || true
 
 # Build the composer stage:
-docker build --target composer \
+docker build \
+  --target composer \
   --cache-from "$CI_APPLICATION_REPOSITORY:composer" \
   $build_secret_args \
   --build-arg HTTP_PROXY="$HTTP_PROXY" \
@@ -49,7 +50,8 @@ docker push "$CI_APPLICATION_REPOSITORY:composer"
 docker image pull "$CI_APPLICATION_REPOSITORY:builder" || true
 
 # Build the builder stage:
-docker build --target builder \
+docker build \
+  --target builder \
   --cache-from "$CI_APPLICATION_REPOSITORY:composer" \
   --cache-from "$CI_APPLICATION_REPOSITORY:builder" \
   $build_secret_args \
@@ -93,3 +95,49 @@ docker build \
 
 docker push "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG"
 docker push "$CI_APPLICATION_REPOSITORY:latest"
+
+if [[ -f Dockerfile-nginx ]]; then
+  echo "Building nginx..."
+
+  docker image pull "$CI_APPLICATION_REPOSITORY:nginx-builder" || true
+
+  # Build the nginx:
+  docker build \
+    -f Dockerfile-nginx \
+    --target builder \
+    --cache-from "$CI_APPLICATION_REPOSITORY:nginx-builder" \
+    $build_secret_args \
+    --build-arg HTTP_PROXY="$HTTP_PROXY" \
+    --build-arg http_proxy="$http_proxy" \
+    --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
+    --build-arg https_proxy="$https_proxy" \
+    --build-arg FTP_PROXY="$FTP_PROXY" \
+    --build-arg ftp_proxy="$ftp_proxy" \
+    --build-arg NO_PROXY="$NO_PROXY" \
+    --build-arg no_proxy="$no_proxy" \
+    $AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS \
+    --tag "$CI_APPLICATION_REPOSITORY:nginx-builder" .
+
+  docker push "$CI_APPLICATION_REPOSITORY:nginx-builder"
+
+  docker image pull "$CI_APPLICATION_REPOSITORY:nginx" || true
+
+  # Build the nginx:
+  docker build \
+    -f Dockerfile-nginx \
+    --cache-from "$CI_APPLICATION_REPOSITORY:nginx-builder" \
+    --cache-from "$CI_APPLICATION_REPOSITORY:nginx" \
+    $build_secret_args \
+    --build-arg HTTP_PROXY="$HTTP_PROXY" \
+    --build-arg http_proxy="$http_proxy" \
+    --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
+    --build-arg https_proxy="$https_proxy" \
+    --build-arg FTP_PROXY="$FTP_PROXY" \
+    --build-arg ftp_proxy="$ftp_proxy" \
+    --build-arg NO_PROXY="$NO_PROXY" \
+    --build-arg no_proxy="$no_proxy" \
+    $AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS \
+    --tag "$CI_APPLICATION_REPOSITORY:nginx" .
+
+  docker push "$CI_APPLICATION_REPOSITORY:nginx"
+fi

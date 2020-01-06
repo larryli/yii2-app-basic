@@ -5,14 +5,22 @@ variables:
   REGISTRY_MIRROR: https://dockerhub.azk8s.cn
   CHART_MIRROR: https://mirror.azure.cn/kubernetes/charts/
 
-  MYSQL_USER: user
-  MYSQL_PASSWORD: testing-password
-  MYSQL_ENABLED: "true"
   MYSQL_DB: $CI_ENVIRONMENT_SLUG
-  MYSQL_VERSION: 5.7.14
+  MYSQL_ENABLED: "true"
+  MYSQL_PASSWORD: testing-password
+  MYSQL_USER: user
+  MYSQL_VERSION: 5.7.28
 
   DB_INITIALIZE: "/app/wait-for -- /app/yii migrate/up --interactive=0"
   DB_MIGRATE: "/app/yii migrate/up --interactive=0"
+
+  CRON_CMD: "/app/yii hello"
+  CORN_SCHEDULE: "*/1 * * * *"
+  QUEUE_CMD: "/app/yii queue/listen --verbose"
+
+  REDIS_ENABLED: "true"
+  REDIS_PASSWORD: testing-password
+  REDIS_VERSION: 5.0.7
 
   TLS_ENABLED: "true"
   TLS_ACME: "true"

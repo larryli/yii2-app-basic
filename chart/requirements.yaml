@@ -1,5 +1,9 @@
 dependencies:
   - name: mysql
-    version: 0.19.2
+    version: 1.6.2
     repository: https://mirror.azure.cn/kubernetes/charts/
     condition: mysql.enabled
+  - name: redis
+    version: 10.3.0
+    repository: https://mirror.azure.cn/kubernetes/charts/
+    condition: redis.enabled

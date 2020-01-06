@@ -1,18 +1,15 @@
-{{- if .Values.application.migrateCommand -}}
+{{- if .Values.application.queueCommand -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ template "trackableappname" . }}-db-migrate
+  name: {{ template "trackableappname" . }}-queue-worker
   labels:
     app: {{ template "appname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version| replace "+" "_" }}"
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-  annotations:
-    "helm.sh/hook": pre-upgrade
-    "helm.sh/hook-delete-policy": before-hook-creation
-    "helm.sh/hook-weight": "0"
 spec:
+  parallelism: {{ .Values.parallelismCount }}
   template:
     metadata:
       labels:
@@ -26,7 +23,7 @@ spec:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         command: ["/bin/sh"]
-        args: ["-c", "{{ .Values.application.migrateCommand }}"]
+        args: ["-c", "{{ .Values.application.queueCommand }}"]
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         {{- if .Values.application.secretName }}
         envFrom:
@@ -46,4 +43,6 @@ spec:
           value: {{ .Values.application.redisHost | quote }}
         - name: REDIS_PASSWORD
           value: {{ .Values.redis.password | quote }}
+        - name: NCHAN_HOST
+          value: {{ .Values.application.nchanHost | quote }}
 {{- end -}}

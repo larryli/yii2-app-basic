@@ -42,4 +42,8 @@ spec:
           value: {{ .Values.mysql.mysqlPassword | quote }}
         - name: MYSQL_DB
           value: {{ .Values.mysql.mysqlDatabase | quote }}
+        - name: REDIS_HOST
+          value: {{ .Values.application.redisHost | quote }}
+        - name: REDIS_PASSWORD
+          value: {{ .Values.redis.password | quote }}
 {{- end -}}
