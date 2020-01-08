@@ -6,7 +6,6 @@ use app\jobs\DownloadJob;
 use app\jobs\NotifyJob;
 use Yii;
 use yii\base\Behavior;
-use yii\base\InvalidConfigException;
 use yii\queue\ExecEvent;
 use yii\queue\Queue;
 
@@ -25,7 +24,7 @@ class NotifyBehavior extends Behavior
 
     /**
      * @param ExecEvent $event
-     * @throws InvalidConfigException
+     * @noinspection PhpUnused
      */
     public function afterExec(ExecEvent $event)
     {
@@ -36,7 +35,7 @@ class NotifyBehavior extends Behavior
 
     /**
      * @param ExecEvent $event
-     * @throws InvalidConfigException
+     * @noinspection PhpUnused
      */
     public function afterError(ExecEvent $event)
     {
@@ -57,11 +56,12 @@ class NotifyBehavior extends Behavior
     /**
      * @param string $id
      * @param string $message
-     * @throws InvalidConfigException
+     * @noinspection PhpDocMissingThrowsInspection
      */
     protected function notify($id, $message)
     {
         /** @var Queue $queue */
+        /** @noinspection PhpUnhandledExceptionInspection */
         $queue = Yii::$app->get('queue');
         $queue->push(new NotifyJob([
             'id' => $id,

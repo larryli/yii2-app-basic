@@ -18,13 +18,13 @@ $config = [
             'traceLevel' => YII_DEBUG ? 3 : 0,
             'targets' => [
                 [
-                    'class' => 'yii\log\FileTarget',
+                    'class' => yii\log\FileTarget::class,
                     'levels' => ['error', 'warning'],
                 ],
             ],
         ],
         'mailer' => [
-            'class' => 'yii\swiftmailer\Mailer',
+            'class' => yii\swiftmailer\Mailer::class,
             // send all mails to a file by default. You have to set
             // 'useFileTransport' to false and configure a transport
             // for the mailer to send real emails.
@@ -37,7 +37,7 @@ $config = [
             'cookieValidationKey' => getenv('COOKIE_VALIDATION_KEY'),
         ],
         'session' => [
-            'class' => 'yii\web\DbSession',
+            'class' => yii\web\DbSession::class,
         ],
         'urlManager' => [
             'enablePrettyUrl' => true,
@@ -50,7 +50,7 @@ $config = [
             ],
         ],
         'user' => [
-            'identityClass' => 'app\models\User',
+            'identityClass' => app\models\User::class,
             'enableAutoLogin' => true,
         ],
     ],
@@ -61,23 +61,22 @@ if (YII_ENV_DEV) {
     // configuration adjustments for 'dev' environment
     $config['bootstrap'][] = 'debug';
     $config['modules']['debug'] = [
-        'class' => 'yii\debug\Module',
+        'class' => yii\debug\Module::class,
         // uncomment the following to add your IP if you are not connecting from localhost.
-        'allowedIPs' => [getenv('DEBUG_IP') ?: '127.0.0.1'],
+        'allowedIPs' => [getenv('DEBUG_IP') ?: '127.0.0.1', '::1'],
         'panels' => [
-            'queue' => 'yii\queue\debug\Panel',
+            'queue' => yii\queue\debug\Panel::class,
         ],
     ];
 
-
     $config['bootstrap'][] = 'gii';
     $config['modules']['gii'] = [
-        'class' => 'yii\gii\Module',
+        'class' => yii\gii\Module::class,
         // uncomment the following to add your IP if you are not connecting from localhost.
         'allowedIPs' => ['127.0.0.1', '::1'],
         'generators' => [
             'job' => [
-                'class' => 'yii\queue\gii\Generator',
+                'class' => yii\queue\gii\Generator::class,
             ],
         ],
     ];

@@ -4,7 +4,6 @@ namespace app\models;
 
 use app\jobs\DownloadJob;
 use Yii;
-use yii\base\InvalidConfigException;
 use yii\base\Model;
 use yii\queue\Queue;
 
@@ -27,12 +26,13 @@ class DownloadForm extends Model
 
     /**
      * @return bool
-     * @throws InvalidConfigException
+     * @noinspection PhpDocMissingThrowsInspection
      */
     public function download()
     {
         if ($this->validate()) {
             /** @var Queue $queue */
+            /** @noinspection PhpUnhandledExceptionInspection */
             $queue = Yii::$app->get('queue');
             $this->_id = $queue->push(new DownloadJob([
                 'url' => $this->url,

@@ -2,17 +2,16 @@
 
 namespace app\controllers;
 
-use Throwable;
 use Yii;
 use app\models\Post;
 use yii\data\ActiveDataProvider;
-use yii\db\StaleObjectException;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 
 /**
  * PostController implements the CRUD actions for Post model.
+ * @noinspection PhpUnused
  */
 class PostController extends Controller
 {
@@ -51,6 +50,7 @@ class PostController extends Controller
      * @param integer $id
      * @return mixed
      * @throws NotFoundHttpException if the model cannot be found
+     * @noinspection PhpUnused
      */
     public function actionView($id)
     {
@@ -63,6 +63,7 @@ class PostController extends Controller
      * Creates a new Post model.
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return mixed
+     * @noinspection PhpUnused
      */
     public function actionCreate()
     {
@@ -83,6 +84,7 @@ class PostController extends Controller
      * @param integer $id
      * @return mixed
      * @throws NotFoundHttpException if the model cannot be found
+     * @noinspection PhpUnused
      */
     public function actionUpdate($id)
     {
@@ -103,11 +105,12 @@ class PostController extends Controller
      * @param integer $id
      * @return mixed
      * @throws NotFoundHttpException if the model cannot be found
-     * @throws Throwable
-     * @throws StaleObjectException
+     * @noinspection PhpUnused
+     * @noinspection PhpDocMissingThrowsInspection
      */
     public function actionDelete($id)
     {
+        /** @noinspection PhpUnhandledExceptionInspection */
         $this->findModel($id)->delete();
 
         return $this->redirect(['index']);

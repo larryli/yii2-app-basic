@@ -5,11 +5,13 @@ namespace app\controllers;
 use Yii;
 use yii\filters\AccessControl;
 use yii\web\Controller;
-use yii\web\Response;
 use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
 
+/***
+ * @noinspection PhpUnused
+ */
 class SiteController extends Controller
 {
     /**
@@ -19,7 +21,7 @@ class SiteController extends Controller
     {
         return [
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'only' => ['logout'],
                 'rules' => [
                     [
@@ -30,7 +32,7 @@ class SiteController extends Controller
                 ],
             ],
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'logout' => ['post'],
                 ],
@@ -57,7 +59,7 @@ class SiteController extends Controller
     /**
      * Displays homepage.
      *
-     * @return string
+     * @return mixed
      */
     public function actionIndex()
     {
@@ -67,7 +69,8 @@ class SiteController extends Controller
     /**
      * Login action.
      *
-     * @return Response|string
+     * @return mixed
+     * @noinspection PhpUnused
      */
     public function actionLogin()
     {
@@ -89,7 +92,8 @@ class SiteController extends Controller
     /**
      * Logout action.
      *
-     * @return Response
+     * @return mixed
+     * @noinspection PhpUnused
      */
     public function actionLogout()
     {
@@ -101,7 +105,8 @@ class SiteController extends Controller
     /**
      * Displays contact page.
      *
-     * @return Response|string
+     * @return mixed
+     * @noinspection PhpUnused
      */
     public function actionContact()
     {
@@ -119,7 +124,8 @@ class SiteController extends Controller
     /**
      * Displays about page.
      *
-     * @return string
+     * @return mixed
+     * @noinspection PhpUnused
      */
     public function actionAbout()
     {

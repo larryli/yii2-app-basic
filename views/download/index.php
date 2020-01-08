@@ -4,35 +4,15 @@
 /* @var $form yii\bootstrap\ActiveForm */
 /* @var $model app\models\DownloadForm */
 
-use app\assets\NchanAsset;
+use app\assets\NotifyAsset;
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
 
 $success = Yii::$app->session->hasFlash('downloadForm');
 if ($success) {
-    NchanAsset::register($this);
+    NotifyAsset::register($this);
     $model = Yii::$app->session->getFlash('downloadForm');
-    $js = <<< EOF
-var sub = new NchanSubscriber('/notify?id={$model->id}', {
-    subscriber: ['eventsource', 'websocket', 'longpoll'],
-    reconnect: 'persist',
-    shared: true
-});
-sub.on('message', function(message, message_metadata) {
-    if (message == 'done') {
-        $('#download-result').text('Download completed.');
-    } else if (message == 'error') {
-        $('#download-result').text('Download error.');
-    } else {
-        $('#download-result').text(message);
-    }
-});
-sub.on('error', function(code, message) {
-    $('#download-result').text(message);
-});
-sub.start();
-EOF;
-    $this->registerJs($js);
+    $this->registerJs("notify('/notify?id={$model->id}', '#download-result')");
 }
 
 $this->title = 'Download';

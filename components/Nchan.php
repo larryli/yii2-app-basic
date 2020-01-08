@@ -42,7 +42,6 @@ class Nchan extends Component
      * @param string $id
      * @param mixed $message
      * @return mixed
-     * @throws InvalidConfigException
      * @throws Exception
      */
     public function pub($id, $message)
@@ -72,7 +71,7 @@ class Nchan extends Component
      * Get http client
      *
      * @return Client
-     * @throws InvalidConfigException
+     * @noinspection PhpDocMissingThrowsInspection
      */
     protected function getHttpClient()
     {
@@ -85,6 +84,7 @@ class Nchan extends Component
                 $config['transport'] = $this->transport;
             }
             /** @var Client _httpClient */
+            /** @noinspection PhpUnhandledExceptionInspection */
             $this->_httpClient = Yii::createObject($config);
         }
         return $this->_httpClient;

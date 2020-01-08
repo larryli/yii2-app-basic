@@ -19,7 +19,6 @@ class LoginForm extends Model
 
     private $_user = false;
 
-
     /**
      * @return array the validation rules.
      */
@@ -41,6 +40,8 @@ class LoginForm extends Model
      *
      * @param string $attribute the attribute currently being validated
      * @param array $params the additional name-value pairs given in the rule
+     * @noinspection PhpUnused
+     * @noinspection PhpUnusedParameterInspection
      */
     public function validatePassword($attribute, $params)
     {

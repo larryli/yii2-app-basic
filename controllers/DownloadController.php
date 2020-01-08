@@ -4,14 +4,15 @@ namespace app\controllers;
 
 use app\models\DownloadForm;
 use Yii;
-use yii\base\InvalidConfigException;
 use yii\web\Controller;
 
+/***
+ * @noinspection PhpUnused
+ */
 class DownloadController extends Controller
 {
     /**
      * @return mixed
-     * @throws InvalidConfigException
      */
     public function actionIndex()
     {

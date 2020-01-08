@@ -17,6 +17,7 @@ use yii\console\ExitCode;
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
+ * @noinspection PhpUnused
  */
 class HelloController extends Controller
 {

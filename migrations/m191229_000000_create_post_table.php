@@ -4,6 +4,7 @@ use yii\db\Migration;
 
 /**
  * Handles the creation of table `{{%post}}`.
+ * @noinspection PhpUnused
  */
 class m191229_000000_create_post_table extends Migration
 {
