@@ -78,6 +78,12 @@ redis:
   enabled: true
   cluster:
     enabled: false
+persistence:
+  enabled: true
+  # storageClass: "-"
+  accessMode: ReadWriteMany
+  size: 8Gi
+  annotations: {}
 
 resources:
 #  limits:

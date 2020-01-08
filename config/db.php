@@ -8,7 +8,7 @@ $config =  [
     'charset' => 'utf8',
 ];
 
-if (getenv('ENABLE_SCHEMA_CACHE')) {
+if (getenv('ENABLE_SCHEMA_CACHE') === 'true') {
     // Schema cache options (for production environment)
     $config['enableSchemaCache'] = true;
     $config['schemaCacheDuration'] = getenv('SCHEMA_CACHE_DURATION') ?: 60;

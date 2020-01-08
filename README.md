@@ -23,6 +23,12 @@ Key | Value
 `K8S_SECRET_SCHEMA_CACHE_DURATION` | see app env `SCHEMA_CACHE_DURATION`
 `K8S_SECRET_SENDER_EMAIL` | see app env `SENDER_EMAIL`
 `K8S_SECRET_SENDER_NAME` | see app env `SENDER_NAME`
+`K8S_SECRET_SMTP_ENABLED` | see app env `SMTP_ENABLED`
+`K8S_SECRET_SMTP_HOST` | see app env `SMTP_HOST`
+`K8S_SECRET_SMTP_PASSWORD` | see app env `SMTP_PASSWORD`
+`K8S_SECRET_SMTP_PORT` | see app env `SMTP_PORT`
+`K8S_SECRET_SMTP_TLS` | see app env `SMTP_TLS`
+`K8S_SECRET_SMTP_USER` | see app env `SMTP_USER`
 `K8S_SECRET_YII_DEBUG` | see app env `YII_DEBUG`
 `K8S_SECRET_YII_ENV` | see app env `YII_ENV`
 `MYSQL_DB` | default set `$CI_ENVIRONMENT_SLUG` such as `staging` or `production`
@@ -64,7 +70,13 @@ Key | Value
 `REDIS_PASSWORD` | default config empty if not set
 `SCHEMA_CACHE` | default config `cache` if not set
 `SCHEMA_CACHE_DURATION` | default config `60` if not set
-`SENDER_EMAIL` | default config `noreply@example.com"` if not set
+`SENDER_EMAIL` | default config `noreply@example.com` if not set
 `SENDER_NAME` | default config `Example.com mailer` if not set
+`SMTP_ENABLED` | default config `false` if not set
+`SMTP_HOST` | default config `localhost` if not set
+`SMTP_PASSWORD` | default config empty if not set
+`SMTP_PORT` | default config `25` if not set
+`SMTP_TLS` | default config `false` if not set
+`SMTP_USER` | default config empty if not set
 `YII_DEBUG` | default define `false` if not set
 `YII_ENV` | default define `prod` if not set

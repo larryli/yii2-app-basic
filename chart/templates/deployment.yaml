@@ -33,16 +33,27 @@ spec:
       imagePullSecrets:
 {{ toYaml .Values.image.secrets | indent 10 }}
       volumes:
-        # https://medium.com/flant-com/stateful-app-files-in-kubernetes-d015311e5e6b
-        - name: assets
-          emptyDir: {}
-        # Create the shared files volume to be used in both pods (nginx + php-fpm)
-        - name: shared-files
-          emptyDir: {}
-        # Add the nginx/yii2 ConfigMap as a volume for the nginx pod
-        - name: nginx-config-volume
-          configMap:
-            name: {{ template "trackableappname" . }}-nginx-config
+      # https://medium.com/flant-com/stateful-app-files-in-kubernetes-d015311e5e6b
+      - name: assets
+        emptyDir: {}
+      # Add the nginx/yii2 ConfigMap as a volume for the nginx pod
+      - name: nginx-config-volume
+        configMap:
+          name: {{ template "trackableappname" . }}-nginx-config
+      # yii2 runtime
+      - name: runtime
+        emptyDir: {}
+      # Create the shared files volume to be used in both pods (nginx + php-fpm)
+      - name: shared-files
+        emptyDir: {}
+      # Uploads pvc
+      - name: uploads
+      {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.persistence.existingClaim | default (include "trackableappname" .) }}-uploads
+      {{- else }}
+        emptyDir: {}
+      {{- end }}
       containers:
       # App (php-fpm)
       - name: {{ .Chart.Name }}
@@ -75,25 +86,43 @@ spec:
         volumeMounts:
         - name: assets
           mountPath: /app/web/assets
+        - name: runtime
+          mountPath: /app/runtime
         - name: shared-files
           mountPath: /var/www/html
+        - name: uploads
+          mountPath: /app/web/uploads
+          {{- if .Values.persistence.subPath }}
+          subPath: {{ .Values.persistence.subPath }}
+          {{- end }}
         # Share the app web files to be served by nginx
         lifecycle:
           postStart:
             exec:
-              command: ["/bin/sh", "-c", "cp -r /app/web/ /var/www/html/"]
+              command: ["/bin/sh", "-c", "mkdir -p /app/runtime/logs; touch /app/runtime/logs/app.log; cp -r /app/web/ /var/www/html/"]
         resources:
 {{ toYaml .Values.resources | indent 12 }}
+      - name: {{ .Chart.Name }}-log
+        image: busybox
+        args: [/bin/sh, -c, 'tail -n+1 -f /app/runtime/logs/app.log']
+        volumeMounts:
+        - name: runtime
+          mountPath: /app/runtime
       - name: {{ .Chart.Name }}-nginx
         image: "{{ .Values.image.repository }}:nginx"
         volumeMounts:
         - name: assets
           mountPath: /var/www/assets
-        - name: shared-files
-          mountPath: /var/www/html
         - name: nginx-config-volume
           mountPath: /etc/nginx/nginx.conf
           subPath: nginx.conf
+        - name: shared-files
+          mountPath: /var/www/html
+        - name: uploads
+          mountPath: /var/www/uploads
+          {{- if .Values.persistence.subPath }}
+          subPath: {{ .Values.persistence.subPath }}
+          {{- end }}
         ports:
         - name: "{{ .Values.service.name }}"
           containerPort: {{ .Values.service.internalPort }}

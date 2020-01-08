@@ -47,6 +47,11 @@ data:
             alias /var/www/assets/;
         }
 
+        # Yii2 uploads
+        location /uploads/ {
+            alias /var/www/uploads/;
+        }
+
         location = /notify {
           nchan_subscriber;
           nchan_channel_group {{ .Values.application.nchanChannel }};

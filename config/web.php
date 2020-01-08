@@ -6,7 +6,7 @@ $config = [
     'bootstrap' => ['log'],
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
-        '@npm'   => '@vendor/npm-asset',
+        '@npm' => '@vendor/npm-asset',
     ],
     'components' => [
         'cache' => require __DIR__ . '/cache.php',
@@ -25,10 +25,7 @@ $config = [
         ],
         'mailer' => [
             'class' => yii\swiftmailer\Mailer::class,
-            // send all mails to a file by default. You have to set
-            // 'useFileTransport' to false and configure a transport
-            // for the mailer to send real emails.
-            'useFileTransport' => true,
+            'useFileTransport' => getenv('SMTP_ENABLED') !== 'true',
         ],
         'nchan' => require __DIR__ . '/nchan.php',
         'queue' => require __DIR__ . '/queue.php',
@@ -56,6 +53,17 @@ $config = [
     ],
     'params' => require __DIR__ . '/params.php',
 ];
+
+if (getenv('SMTP_ENABLED') === 'true') {
+    $config['components']['mailer']['transport'] = [
+        'class' => Swift_SmtpTransport::class,
+        'host' => getenv('SMTP_HOST') ?: 'localhost',
+        'username' => getenv('SMTP_USER') ?: '',
+        'password' => getenv('SMTP_PASSWORD') ?: '',
+        'port' => getenv('SMTP_PORT') ?: 25,
+        'encryption' => (getenv('SMTP_TLS') === 'true') ? 'tls' : '',
+    ];
+}
 
 if (YII_ENV_DEV) {
     // configuration adjustments for 'dev' environment
