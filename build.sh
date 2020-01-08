@@ -34,6 +34,7 @@ docker build \
   --target composer \
   --cache-from "$CI_APPLICATION_REPOSITORY:composer" \
   $build_secret_args \
+  --build-arg ASSET_COMPRESS="$ASSET_COMPRESS" \
   --build-arg HTTP_PROXY="$HTTP_PROXY" \
   --build-arg http_proxy="$http_proxy" \
   --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
@@ -55,6 +56,7 @@ docker build \
   --cache-from "$CI_APPLICATION_REPOSITORY:composer" \
   --cache-from "$CI_APPLICATION_REPOSITORY:builder" \
   $build_secret_args \
+  --build-arg ASSET_COMPRESS="$ASSET_COMPRESS" \
   --build-arg HTTP_PROXY="$HTTP_PROXY" \
   --build-arg http_proxy="$http_proxy" \
   --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
@@ -81,6 +83,7 @@ docker build \
   --cache-from "$CI_APPLICATION_REPOSITORY:$CI_COMMIT_BEFORE_SHA" \
   --cache-from "$CI_APPLICATION_REPOSITORY:latest" \
   $build_secret_args \
+  --build-arg ASSET_COMPRESS="$ASSET_COMPRESS" \
   --build-arg HTTP_PROXY="$HTTP_PROXY" \
   --build-arg http_proxy="$http_proxy" \
   --build-arg HTTPS_PROXY="$HTTPS_PROXY" \

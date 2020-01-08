@@ -19,6 +19,10 @@ spec:
       restartPolicy: Never
       imagePullSecrets:
 {{ toYaml .Values.image.secrets | indent 10 }}
+      volumes:
+      # yii2 runtime
+      - name: runtime
+        emptyDir: {}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -45,4 +49,7 @@ spec:
           value: {{ .Values.redis.password | quote }}
         - name: NCHAN_HOST
           value: {{ .Values.application.nchanHost | quote }}
+        volumeMounts:
+        - name: runtime
+          mountPath: /app/runtime
 {{- end -}}

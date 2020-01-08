@@ -12,8 +12,12 @@ auto-deploy
 build.sh
 chart/
 codeception.yml
+config/test.php
+config/test_db.php
 docker-compose.yml
 Dockerfile
+Dockerfile-nginx
+requirements.php
 runtime/*
 tests/
 vagrant/

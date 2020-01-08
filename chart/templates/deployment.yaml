@@ -99,7 +99,13 @@ spec:
         lifecycle:
           postStart:
             exec:
-              command: ["/bin/sh", "-c", "mkdir -p /app/runtime/logs; touch /app/runtime/logs/app.log; cp -r /app/web/ /var/www/html/"]
+              command:
+              - "/bin/sh"
+              - "-c"
+              - >
+                mkdir -p /app/runtime/logs;
+                touch /app/runtime/logs/app.log;
+                tar --exclude assets --exclude uploads -cC /app web | tar -xC /var/www/html
         resources:
 {{ toYaml .Values.resources | indent 12 }}
       - name: {{ .Chart.Name }}-log

@@ -7,9 +7,21 @@ RUN composer config -g repo.packagist composer https://mirrors.aliyun.com/compos
 
 RUN composer install --no-progress --no-dev --no-scripts --no-suggest --no-interaction --prefer-dist --optimize-autoloader
 
+ARG ASSET_COMPRESS=false
+
+RUN if [ "$ASSET_COMPRESS" = true ]; then \
+    composer global require --optimize-autoloader --no-progress --prefer-dist matthiasmullie/minify:1.3.59; \
+  fi
+
 COPY . /app
 
 RUN composer dump-autoload --no-dev --optimize --classmap-authoritative
+
+RUN if [ "$ASSET_COMPRESS" = true ]; then \
+    cp -r /app/vendor/bower-asset/bootstrap/dist /app/web/bootstrap \
+    && /app/yii asset/compress /app/config/assets.php /app/config/asset-bundles.php \
+    && rm -rf /app/web/css /app/web/js /app/web/bootstrap/css /app/web/bootstrap/js /app/vendor/bower-asset /app/vendor/npm-asset; \
+  fi
 
 FROM php:fpm-alpine AS builder
 
@@ -35,9 +47,7 @@ COPY --from=builder /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
 
 COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
 
-COPY --chown=www-data:www-data . /app
-
-COPY --from=composer --chown=www-data:www-data /app/vendor /app/vendor
+COPY --from=composer --chown=www-data:www-data /app /app
 
 USER www-data
 

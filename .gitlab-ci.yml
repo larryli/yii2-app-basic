@@ -26,6 +26,8 @@ variables:
   TLS_ACME: "true"
   TLS_SSL_REDIRECT: "false"
 
+  ASSET_COMPRESS: "true"
+
   DOCKER_DRIVER: overlay2
 
   ROLLOUT_RESOURCE_TYPE: deployment

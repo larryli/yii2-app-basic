@@ -54,6 +54,11 @@ $config = [
     'params' => require __DIR__ . '/params.php',
 ];
 
+if (file_exists(__DIR__ . '/asset-bundles.php')) {
+    /** @noinspection PhpIncludeInspection */
+    $config['components']['assetManager']['bundles'] = require __DIR__ . '/asset-bundles.php';
+}
+
 if (getenv('SMTP_ENABLED') === 'true') {
     $config['components']['mailer']['transport'] = [
         'class' => Swift_SmtpTransport::class,

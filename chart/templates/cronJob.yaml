@@ -21,6 +21,10 @@ spec:
           restartPolicy: Never
           imagePullSecrets:
 {{ toYaml .Values.image.secrets | indent 14 }}
+          volumes:
+          # yii2 runtime
+          - name: runtime
+            emptyDir: {}
           containers:
           - name: {{ .Chart.Name }}
             image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -45,4 +49,7 @@ spec:
               value: {{ .Values.application.redisHost | quote }}
             - name: REDIS_PASSWORD
               value: {{ .Values.redis.password | quote }}
+            volumeMounts:
+            - name: runtime
+              mountPath: /app/runtime
 {{- end -}}
