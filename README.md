@@ -47,6 +47,8 @@ Key | Value
 
 ## App Env
 
+Key | Value
+--- | ---
 `ADMIN_EMAIL` | default config `admin@example.com` if not set
 `COOKIE_VALIDATION_KEY` | must be set a string
 `DEBUG_IP` | default config `127.0.0.1` if not set, set `"*"` enable debug panel for everyone when `YII_DEBUG` = `true` and `YII_ENV` = `dev`
