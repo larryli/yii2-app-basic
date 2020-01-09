@@ -26,8 +26,8 @@ variables:
   TLS_ACME: "true"
   TLS_SSL_REDIRECT: "false"
 
-  ASSET_COMPRESS: "true"
-  COMPOSER_DEV: "false"
+  BUILD_ASSET: "true"
+  BUILD_DEV: "false"
 
   DOCKER_DRIVER: overlay2
 

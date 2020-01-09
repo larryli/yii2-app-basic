@@ -8,8 +8,8 @@ Key | Value
 --- | ---
 `ADDITIONAL_HOSTS` | custom domains, comma-separated, usually with **Scope**
 `<env>_ADDITIONAL_HOSTS` | custom domains for env, such as `PRODUCTION_ADDITIONAL_HOSTS`
-`ASSET_COMPRESS` | default `true`, set `false` disable `yii asset/compress` on build stage
-`COMPOSER_DEV` | default `false`, set `true` enable `composer install --dev` on build stage
+`BUILD_ASSET` | default `true`, set `false` disable `yii asset/compress` on build stage
+`BUILD_DEV` | default `false`, set `true` enable `composer install --dev` on build stage
 `CRON_CMD` | default `/app/yii hello`
 `CRON_SCHEDULE` | default `*/1 * * * *`
 `DB_INITIALIZE` | default `/app/wait-for -- /app/yii migrate/up --interactive=0`

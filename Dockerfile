@@ -5,29 +5,29 @@ RUN composer config -g repo.packagist composer https://mirrors.aliyun.com/compos
 
 COPY composer.* /app/
 
-ARG COMPOSER_DEV=false
+ARG BUILD_DEV=false
 
-RUN if [ "$COMPOSER_DEV" = true ]; then \
+RUN if [ "$BUILD_DEV" = true ]; then \
     composer install --dev --no-progress --no-scripts --no-suggest --no-interaction --prefer-dist; \
   else \
     composer install --no-dev --no-progress --no-scripts --no-suggest --no-interaction --prefer-dist; \
   fi
 
-ARG ASSET_COMPRESS=false
+ARG BUILD_ASSET=false
 
-RUN if [ "$ASSET_COMPRESS" = true ]; then \
+RUN if [ "$BUILD_ASSET" = true ]; then \
     composer global require --optimize-autoloader --no-progress --prefer-dist matthiasmullie/minify:1.3.59; \
   fi
 
 COPY . /app
 
-RUN if [ "$COMPOSER_DEV" = true ]; then \
+RUN if [ "$BUILD_DEV" = true ]; then \
     composer dump-autoload --optimize --classmap-authoritative; \
   else \
     composer dump-autoload --no-dev --optimize --classmap-authoritative; \
   fi
 
-RUN if [ "$ASSET_COMPRESS" = true ]; then \
+RUN if [ "$BUILD_ASSET" = true ]; then \
     cp -r /app/vendor/bower-asset/bootstrap/dist/* /app/web/ \
     && /app/yii asset/compress /app/config/assets.php /app/config/asset-bundles.php \
     && rm -rf /app/web/css /app/web/js /app/vendor/bower-asset /app/vendor/npm-asset; \
