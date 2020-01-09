@@ -262,7 +262,7 @@ function deploy() {
     --set application.initializeCommand="" \
     --set application.migrateCommand="$DB_MIGRATE" \
     --set application.cronCommand="$CRON_CMD" \
-    --set application.cronSchedule="'$CORN_SCHEDULE'" \
+    --set application.cronSchedule="'$CRON_SCHEDULE'" \
     --set application.queueCommand="$QUEUE_CMD" \
     --set redis.enabled="$redis_enabled" \
     --set redis.nameOverride="redis" \

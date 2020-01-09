@@ -54,7 +54,7 @@ data:
 
         location = /notify {
           nchan_subscriber;
-          nchan_channel_group {{ .Values.application.nchanChannel }};
+          nchan_channel_group notify;
           nchan_channel_id $arg_id;
           nchan_redis_pass redis_server;
         }
@@ -64,7 +64,7 @@ data:
 
         location = /pub {
           nchan_publisher;
-          nchan_channel_group {{ .Values.application.nchanChannel }};
+          nchan_channel_group notify;
           nchan_channel_id $arg_id;
           nchan_redis_pass redis_server;
         }

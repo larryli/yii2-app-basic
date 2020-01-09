@@ -19,7 +19,6 @@ application:
   cronSchedule:
   mysqlHost:
   nchanHost:
-  nchanChannel: notify
   queueCommand:
   secretName:
   secretChecksum:
@@ -116,18 +115,3 @@ networkPolicy:
       - namespaceSelector:
           matchLabels:
             name: gitlab-managed-apps
-
-workers: {}
-  # worker:
-  #   replicaCount: 1
-  #   terminationGracePeriodSeconds: 60
-  #   command:
-  #   - /bin/herokuish
-  #   - procfile
-  #   - start
-  #   - worker
-  #   preStopCommand:
-  #   - /bin/herokuish
-  #   - procfile
-  #   - start
-  #   - stop_worker

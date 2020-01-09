@@ -15,7 +15,7 @@ variables:
   DB_MIGRATE: "/app/yii migrate/up --interactive=0"
 
   CRON_CMD: "/app/yii hello"
-  CORN_SCHEDULE: "*/1 * * * *"
+  CRON_SCHEDULE: "*/1 * * * *"
   QUEUE_CMD: "/app/yii queue/listen --verbose"
 
   REDIS_ENABLED: "true"
@@ -27,6 +27,7 @@ variables:
   TLS_SSL_REDIRECT: "false"
 
   ASSET_COMPRESS: "true"
+  COMPOSER_DEV: "false"
 
   DOCKER_DRIVER: overlay2
 

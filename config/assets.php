@@ -41,13 +41,13 @@ return [
         'baseUrl' => '@web/assets',
         'bundles' => [
             yii\bootstrap\BootstrapAsset::class => [
-                'basePath' => '@webroot/bootstrap',
-                'baseUrl' => '@web/bootstrap',
+                'basePath' => '@webroot',
+                'baseUrl' => '@web',
                 'sourcePath' => null,
             ],
             yii\bootstrap\BootstrapPluginAsset::class => [
-                'basePath' => '@webroot/bootstrap',
-                'baseUrl' => '@web/bootstrap',
+                'basePath' => '@webroot',
+                'baseUrl' => '@web',
                 'sourcePath' => null,
             ],
         ],

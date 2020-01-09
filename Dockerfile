@@ -1,11 +1,17 @@
 FROM composer AS composer
 
-COPY composer.* /app/
-
 RUN composer config -g repo.packagist composer https://mirrors.aliyun.com/composer \
     && composer global require --optimize-autoloader --no-progress --prefer-dist hirak/prestissimo
 
-RUN composer install --no-progress --no-dev --no-scripts --no-suggest --no-interaction --prefer-dist --optimize-autoloader
+COPY composer.* /app/
+
+ARG COMPOSER_DEV=false
+
+RUN if [ "$COMPOSER_DEV" = true ]; then \
+    composer install --dev --no-progress --no-scripts --no-suggest --no-interaction --prefer-dist; \
+  else \
+    composer install --no-dev --no-progress --no-scripts --no-suggest --no-interaction --prefer-dist; \
+  fi
 
 ARG ASSET_COMPRESS=false
 
@@ -15,12 +21,16 @@ RUN if [ "$ASSET_COMPRESS" = true ]; then \
 
 COPY . /app
 
-RUN composer dump-autoload --no-dev --optimize --classmap-authoritative
+RUN if [ "$COMPOSER_DEV" = true ]; then \
+    composer dump-autoload --optimize --classmap-authoritative; \
+  else \
+    composer dump-autoload --no-dev --optimize --classmap-authoritative; \
+  fi
 
 RUN if [ "$ASSET_COMPRESS" = true ]; then \
-    cp -r /app/vendor/bower-asset/bootstrap/dist /app/web/bootstrap \
+    cp -r /app/vendor/bower-asset/bootstrap/dist/* /app/web/ \
     && /app/yii asset/compress /app/config/assets.php /app/config/asset-bundles.php \
-    && rm -rf /app/web/css /app/web/js /app/web/bootstrap/css /app/web/bootstrap/js /app/vendor/bower-asset /app/vendor/npm-asset; \
+    && rm -rf /app/web/css /app/web/js /app/vendor/bower-asset /app/vendor/npm-asset; \
   fi
 
 FROM php:fpm-alpine AS builder
