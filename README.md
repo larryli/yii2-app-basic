@@ -23,7 +23,7 @@
 部署要求：
 
 - GitLab 12.6+
-- Kubernetes 1.6+
+- Kubernetes 1.12+
 
 如果没有现存的部署环境，那么需要：
 
@@ -395,6 +395,92 @@ kubectl -n gitlab-managed-apps patch svc ingress-nginx-ingress-controller -p "{\
 
 使用 **Import Project** 选择 **Repo by URL** 填入 `https://github.com/larryli/yii2-auto-devops.git` 创建项目。
 
+### 功能
+
+#### 首页、登录、退出、联系我们与关于
+
+参见 [yii2-app-basic](https://github.com/yiisoft/yii2-app-basic) 
+
+#### Post 表 CURD
+
+使用 [gii](https://github.com/yiisoft/yii2-gii/) 生成的标准 yii2 curd 功能。
+
+#### 下载
+
+使用[后台队列](https://github.com/yiisoft/yii2-queue)下载然后通过 [nchan](https://nchan.io) 通知前台页面完成。
+
+#### 上传
+
+使用 [yii\web\UploadedFile](https://www.yiiframework.com/doc/guide/2.0/en/input-file-upload) 上传图像文件并显示。
+
+### 组件
+
+#### 数据库
+
+采用 MySQL 数据库。
+
+#### 缓存
+
+采用 Redis 缓存，并为设置 `replicas` 去使用主从集群。
+
+可选使用文件缓存，也就是缓存只存在与 pod 内部。在 scale 后无法在多个 pod 之间共享缓存，也就是无法利用缓存在不同请求之间交换数据。
+
+注意：仅仅作为临时缓存（如页面缓存），除了性能问题是不存在其他问题的。
+
+也可选使用数据库缓存，但需要注意**启用数据库结构缓存**与**创建缓存表**存在冲突。
+
+#### 会话
+
+采用 Redis 会话。
+
+可选使用 PHP 系统会话，与文件缓存一样只支持单机。
+
+也可选使用数据库会话。
+
+#### 队列
+
+采用 Redis 队列。
+
+可选使用文件队列，与文件缓存一样只支持单机。
+
+也可选使用数据库队列。
+
+#### 前端资源
+
+自动配置 `asset-bundles.php`。
+
+#### Redis
+
+配置 Redis 服务。
+
+#### Nchan
+
+使用 `yii\httpclient\Client` 调用 nginx nchan pub 接口。在 web 配置下因为处于同一 pod 下无需使用 `NCHAN_HOST`。
+
+### 目录
+
+#### runtime
+
+应用运行时临时目录，其中 `runtime/logs/app.log` 为 Yii2 日志文件。在 pod 部署中挂载此目录为空目录，然后另外配置容器日志输出 `app.log` 内容。
+
+#### vendor
+
+此目录是 composer 自动下载的第三方包，会在构建阶段生成并包含在映像中。
+
+#### web
+
+前端内容。应用容器中 app（php-fpm）与 nginx 共享目录，仅在主 pod 中挂载此目录为空目录，并在 pod 生命周期开始时从 app 复制相关文件到 nginx。
+
+#### web/assets
+
+Yii2 前端资源目录。应用容器中 app（php-fpm）与 nginx 共享目录，仅在主 pod 中挂载此目录为空目录。
+
+注意：在构建中使用 `BUILD_ASSET` = `true` 打包后，此目录为空，可选配置。当 `BUILD_ASSET` = `false` 时，此目录必须配置。
+
+#### web/uploads
+
+上传文件目录。应用容器中 app（php-fpm）与 nginx 共享目录，仅在主 pod 中挂载此目录为持久化目录。
+
 ### CI / CD 设置
 
 #### staging 与 production 部署方式
@@ -465,7 +551,7 @@ kubectl -n gitlab-managed-apps patch svc ingress-nginx-ingress-controller -p "{\
 
 使用单独指定 **Scope** 的 `TLS_SECRET_NAME` 或具体 `<env>_TLS_SECRET_NAME` 如 `PRODUCTION_TLS_SECRET_NAME` 设置部署应用的 SSL 证书 secret name。
 
-请先下面的命令创建 secret tls 存放对应的证书与私钥：
+请先使用下面的命令创建 secret tls 存放对应的证书与私钥：
 
 ```bash
 export KUBE_NAMESPACE=yii2-auto-devops-1-production
@@ -491,8 +577,8 @@ kubectl -n $KUBE_NAMESPACE create secret tls $TLS_SECRET_NAME --cert=$CERT_FILE 
 
 对于 Yii2 来说，均采用了相同脚本，即：
 
-- `DB_INITIALIZE` = `"/app/wait-for -- /app/yii migrate/up --interactive=0"`
-- `DB_MIGRATE` = `"/app/yii migrate/up --interactive=0"`
+- `DB_INITIALIZE` = `/app/wait-for -- /app/yii migrate/up --interactive=0`
+- `DB_MIGRATE` = `/app/yii migrate/up --interactive=0`
 
 其中 `DB_INITIALIZE` 使用了特殊的 `wait-for` 脚本等待 Kubernetes 创建 MySQL 服务成功。
 
@@ -502,13 +588,53 @@ kubectl -n $KUBE_NAMESPACE create secret tls $TLS_SECRET_NAME --cert=$CERT_FILE 
 
 使用 `K8S_SECRET_ENABLE_SCHEMA_CACHE` = `true` 开始缓存，可以配置缓存时间 `K8S_SECRET_SCHEMA_CACHE_DURATION`（单位：秒，默认 `60` 秒）和缓存实体 `K8S_SECRET_SCHEMA_CACHE`（默认 `cache`）。
 
-当 Yii2 缓存也使用数据库缓存时，请不要一开始就是开启此项。一定要部署成功后，后续部署时开启表结构缓存。否则会在建表前出现无法读到缓存（因为缓存表未建）的问题。
+当 Yii2 缓存也使用数据库缓存时，请不要一开始就开启此项。一定要部署成功后，后续部署时开启表结构缓存。否则会在建表前出现无法读到缓存（因为缓存表未建）的问题。
+
+#### Redis
+
+可以使用 `REDIS_ENABLED` = `false` 关闭默认的自动部署 Redis 单例服务，从而使用外部 Redis（可以手工在同一 Kubernets 上安装，也可以使用现有服务）。
+
+当 `REDIS_ENABLED` = `false` 时，建议按实际情况完整指定 `REDIS_HOST`、`K8S_SECRET_REDIS_DB` 与 `REDIS_PASSWORD`。
+
+当 `REDIS_ENABLED` = `true` 时，一定不要设置 `REDIS_HOST`，否则无法连接自动安装的 Redis。`K8S_SECRET_REDIS_DB` 与 `REDIS_PASSWORD` 可以按需指定。另外可以使用 `REDIS_VERSION` 指定 Redis 版本。
+
+当前 Yii2 缓存使用 Redis，并未设置 `replicas`。对于外部 Redis 建议使用 sentinel 哨兵集群。
+
+#### 后台队列任务
+
+对于 Yii2 Queue 来说，默认为：
+
+- `QUEUE_CMD` = `/app/yii queue/listen --verbose`
+
+设置为空时不使用后台队列任务。
+
+#### Nchan
+
+因为后台队列任务与前台 Web 应用在不同 Pod 中执行，所以提供有一个自动指定的 `NCHAN_HOST` 供后台队列使用。对于前台 Web 应用来说可以直接使用 `localhost`。
+
+#### 定时任务
+
+样例脚本和时间配置为：
+
+- `CRON_CMD` = `/app/yii hello`
+- `CORN_SCHEDULE` = `*/1 * * * *`
+
+任意一项为空即不使用定时任务。
 
 #### Cookie 配置
 
 `K8S_SECRET_COOKIE_VALIDATION_KEY` 是唯一一个必须配置的变量，对于 production 也建议使用 **Scope** 单独指定，并勾选 **Masked**。
 
-#### Yii2 环境与调试
+#### SMTP 邮件
+
+配置 `K8S_SECRET_SMTP_ENABLED` = `true` 启用 SMTP 邮件发送功能，并配置下列参数：
+
+- `K8S_SECRET_SMTP_HOST` SMTP 主机
+- `K8S_SECRET_SMTP_PASSWORD` SMTP 密码
+- `K8S_SECRET_SMTP_PORT` SMTP 端口
+- `K8S_SECRET_SMTP_TLS` 是否使用 tls
+
+#### Yii2 环境与调试以及开发构建
 
 默认 `YII_DEBUG=false` `YII_ENV=prod`。
 
@@ -516,13 +642,21 @@ kubectl -n $KUBE_NAMESPACE create secret tls $TLS_SECRET_NAME --cert=$CERT_FILE 
 
 并设置 `K8S_SECRET_DEBUG_IP` = `*` 允许所有 IP 可访问调试面板。
 
-注意：默认 Dockerfile 打包 composer 使用了 --no-dev 参数，如果需要线上调试，请修改 Dockerfile 重新打包后启用调试功能。否则会部署失败（无法加载 dev 相关包）。可以在 composer install 后直接 `composer require "yiisoft/yii2-debug" "yiisoft/yii2-gii"`。
+默认 `BUILD_DEV` = `false` 会在 Dockerfile 构建时 `composer` 使用 `--no-dev` 参数不在映像中包含调试（开发测试）功能。如果需要线上调试，请配置 `BUILD_DEV` = `true` 构建参数包含调试（开发测试）功能。否则会部署失败（无法加载 dev 相关包）。
+
+#### 构建前端 assets 资源
+
+默认 `BUILD_ASSET` = `true`，会在 Dockerfile 构建时对应用使用使用到的前端资源直接打包成独立的 js/css 文件。
+
+具体的资源使用定义在 `config/assets.php` 中。如果发现前端仍有载入前端 `web/assets` 目录下的临时文件，请将对应的 Asset 类加入 `config/assets.php` 的 `bundles` 数组中。如果第三方包使用 CDN 也可以对应配置外部资源。
+
+使用 `BUILD_ASSET` = `false` 可以关闭资源打包。
 
 #### 其他变量
 
 `K8S_SECRET_ADMIN_EMAIL`、`K8S_SECRET_SENDER_EMAIL`、`K8S_SECRET_SENDER_NAME` 均为演示目的。
 
-注意：当前项目并未配置 postfix 或 smtp，所以无法发送邮件。
+注意：未配置 `K8S_SECRET_SMTP_ENABLED` = `true` 和其他 SMTP 变量时，无法发送邮件。
 
 ### 构建与部署技术架构
 
@@ -548,118 +682,68 @@ kubectl -n $KUBE_NAMESPACE create secret tls $TLS_SECRET_NAME --cert=$CERT_FILE 
 
 需要注意的是，composer 执行与 app 的 php 执行并不在同一个映像中。也就是 app 映像中并没有 composer 命令。
 
+在 composer 构建阶段，使用了两个参数 `BUILD_DEV` 与 `BUILD_ASSET`。
+
+`BUILD_DEV` 切换直接使用了 `--dev` 和 `--no-dev` 两个 `composer install` 参数，以方便在 `BUILD_DEV` = `true` 时包含 test 测试与 debug 调试。
+
+`BUILD_ASSET` = `true` 处理前端资源打包。需要注意两点：
+
+- bootstrap 除了 css/js 外还有字体文件，需要先复制到 `web` 前端目录中，再打包
+- 打包之后清理了相关资源目录
+
+另外提供的 `Dockerfile-nginx` 时单独构建 nginx + nchan。该映像并未配置 nginx 自动载入 nchan 扩展。
+
 #### 自定义 build.sh
 
-去掉了 buildpacks 相关的内容。并针对 multi-stage 构建在每一个构建阶段都 pull & push 阶段映像，以便构建缓存可以正常工作。
+去掉了 buildpacks 相关的内容。并针对 multi-stage 构建在每一个构建阶段都 pull & push 阶段映像，以便构建缓存可以正常工作。还增加了构建参数。
+
+另外也分段构建了 nginx + nchan。
 
 #### 自定义 chart
 
-在 `requirements.yaml` 中使用 mysql 替换掉了 postgresql。使用相关 chart 的 0.x 版本是因为兼容 Kubernetes 1.6+ 版本，如有需要可以直接切换最新的 1.x 版本。修改后需更新 `requirements.lock` 文件，详见文末的 FAQ。
+在 `requirements.yaml` 中使用 mysql 替换掉了 postgresql。默认使用最新的 1.x 版本，如需要兼容旧版本 kubernetes 请修改为 0.x 版本。修改后需更新 `requirements.lock` 文件，详见文末的 FAQ。
 
-在 `values.yaml` 同样使用 mysql 替换掉了 postgresql（没有实现对应 managed 逻辑）。增加了 `nginx.ingress.kubernetes.io/ssl-redirect: "false"`。
+然后再增加了 redis。
 
-增加 Nginx 需要的 `templates/nginx-configMap.yaml` 配置文件。
+在 `values.yaml` 同样使用 mysql 替换掉了 postgresql（没有实现对应 managed 逻辑）。增加了 `nginx.ingress.kubernetes.io/ssl-redirect` 控制是否自动从 http 跳转到 https。
 
-修改 `templates/db-initialize-job.yaml`、`templates/db-migrate-hook.yaml` 和 `templates/deployment.yaml`，使用 `MYSQL_HOST` 等替换掉 `DATABASE_URL` 环境变量设置。
+扩充了 `application` 内容，配置后台队列任务的并发值 `parallelismCount`。
 
-在 `templates/deployment.yaml` 增加了三个 `volumes` 挂载入口，其中 `assets` 用于 nginx 与 php-fpm 共享 yii 2 生成的 asset 文件，`shared-files` 将 php 入口文件与 css、js 和图像等文件复制到 nginx，`nginx-config-volume` 为 nginx 配置。并在后面的两个容器中分别挂载。同时在 app 主容器最后增加 `postStart` 生命周期，执行复制操作。
+增加了 `redis` 与 `persistence`。
 
-在 `containers` 后增加了 nginx 容器，并将 Pod 存活检查移到此容器下。
+删除了不需要的 `workers`。
+
+注意：增加的 redis 关闭了主从集群，只使用了单主部署。
+
+增加 Nginx 需要的 `templates/nginx-configMap.yaml` 配置文件。其中针对 nchan 配置了 redis 相关配置，这里的 redis database 是直接指定的 `0` 值。
+
+增加上传文件需要的 `templates/pvc.yaml` 持久化存储配置文件。
+
+修改 `templates/db-initialize-job.yaml`、`templates/db-migrate-hook.yaml` 和 `templates/deployment.yaml`，使用 `MYSQL_HOST` 等替换掉 `DATABASE_URL` 环境变量设置，增加 `REDIS_HOST` 等变量设置。还增加了 `runtime` 运行目录的配置。
+
+增加定时任务 `templates/cronJob.yaml` 配置文件。
+
+增加后台队列任务 `templates/queue-worker-job.yaml` 配置文件。默认并发作业配置为 `2`。 
+
+在 `templates/deployment.yaml` 增加了五个 `volumes` 挂载入口，其中 `assets` 用于 nginx 与 php-fpm 共享 yii2 生成的前端资源文件（`BUILD_ASSET` = `true` 时可不需要此配置），`nginx-config-volume` 为 nginx 配置，`runtime` 为应用运行临时目录（应用日志 `logs/app.log` 在此目录下），`shared-files` 将 php 入口文件与 css、js 等资源文件复制到 nginx，`uploads` 挂载的是持久化存储用于存放应用上传文件。并在后面的三个容器中分别挂载。同时在 app 主容器最后增加 `postStart` 生命周期，执行日志初始化与前端复制操作（使用 `tar` 而不是 `cp` 是因为 `cp` 无法排除 `assets` 与 `uploads` 目录，而且映像中没有提供 `rsync`）。
+
+在 `containers` 后增加了 log 与 nginx 容器。应用日志直接在 log 容器下输出。Pod 存活检查移到 nginx 容器下，另外增加了 nchan 配置的 `9090` 端口。
+
+同样在 `service.yaml` 也增加了 nchan 配置的 `9090` 端口。
+
+删除了 `worker-deployment.yaml` 文件。
 
 #### 自定义 auto-devops
 
-在开始部分，将 `DATABASE_URL` 逻辑修改为 `MYSQL_HOST`。
+在开始部分，将 `DATABASE_URL` 逻辑修改为 `MYSQL_HOST`。并类似处理 `REDIS_HOST` 逻辑，增加了 `NCHAN_HOST` 处理逻辑。
 
 小幅调整了 `download_chart`。
 
-主要修改在 `deploy` 的 `helm upgrade --install`。
+主要修改在 `deploy` 的 `helm upgrade --install`。`--force` 参数是为了解决后台队列任务更新部署时无法自动删除旧有任务的问题。
 
 ### 多项目共用配置
 
 除了 `.gitlab-ci.yml` 文件需要在每个项目复制一份以外。可以类似 GitLab 官方项目创建 `auto-build-image`、`auto-deploy-image` 与 `auto-deploy-app` 三个项目。前两项在 `build` 和 `.auto-deploy` 下直接修改对应的 `image` 即可。最后一项可以在 `variables` 中定义 `AUTO_DEVOPS_CHART` 相关变量（需要自建 chart 仓库）。
-
-### 未完事项
-
-#### 缓存 Cache
-
-当前直接使用的文件缓存，也就是缓存只存在与 pod 内部。在 scale 后无法在多个 pod 之间共享缓存，也就是无法利用缓存在不同请求之间交换数据。
-
-注意：仅仅作为临时缓存（如页面缓存），除了性能问题是不存在其他问题的。
-
-后续：
-
-- 配置 Memcached 服务，并配置 Yii2 缓存组件
-
-可选配置 Redis 缓存，谨慎使用 MySQL 数据库缓存。不建议使用 php apc/zend 等 PHP 扩展缓存（和文件缓存一样仅支持单机）。
-
-#### 会话 Session
-
-当前直接用 PHP 系统会话，与缓存一样只支持单机。
-
-后续：
-
-- 配置 Redis 服务，并配置 Yii2 会话组件
-
-可选配置 MySQL 数据库会话。使用缓存会话组件时一定要注意缓存组件本身是不是支持 scale。
-
-#### MongoDb
-
-后续：
-
-- 配置 MongoDb 服务
-
-可选替换数据库、缓存、会话等组件。
-
-#### 上传文件 Upload
-
-PHP 上传文件到 Nginx 下载。
-
-后续：
-
-- 配置持久化卷同时挂载到 Nginx 和 App
-
-#### 定时任务
-
-增加定时任务。
-
-后续：
-
-- 配置定时任务
-
-#### 后台队列处理
-
-增加后台服务。
-
-后续：
-
-- 配置 beanstalkd 服务，并配置 yii2-queue 队列组件与后台队列服务
-
-可选配置 redis 队列。不建议使用数据库队列（性能问题）。
-
-#### Assets 构建
-
-Yii2 支持 `yii asset/compress` 打包 css/js 资源。
-
-后续：
-
-- 在构建时预先打包资源
-
-#### SMTP 邮件发送
-
-邮件发送功能。
-
-后续：
-
-- 配置 SMTP 参数
-
-#### 附加 Nginx 模块
-
-定制化 Nginx 映像，增加 Nchan 组件。
-
-后续：
-
-- 构建额外的 Nginx 映像（使用其他项目或分支）
-- 配置 Nginx 映像
 
 ## FAQ
 
@@ -708,6 +792,14 @@ helm init --client-only --stable-repo-url $CHART_MIRROR
 helm dependency update chart/
 ```
 
+### 测试 chart 模板
+
+```bash
+helm template chart/
+```
+
+其他 `--set` 参数可以参考 `auto-deploy` 脚本中对应的内容。
+
 ### 部署出错提示 Error: error installing: namespaces "staging" not found
 
 不小心直接 `kubectl delete namespace` 会出现此问题。
@@ -728,10 +820,12 @@ export KUBE_NAMESPACE=yii2-auto-devops-1-staging
 export CHART_NAME=staging
 export TILLER_NAMESPACE=$KUBE_NAMESPACE
 tiller -listen localhost:44134 &
+# export TILLER_PID=
 export HELM_HOST="localhost:44134"
 helm init --client-only --stable-repo-url $CHART_MIRROR
 helm ls
 helm delete $CHART_NAME --purge --tiller-namespace $KUBE_NAMESPACE
+# kill -9 $TILLER_PID
 ```
 
 参见 [https://gitlab.com/gitlab-org/gitlab-foss/issues/54760](https://gitlab.com/gitlab-org/gitlab-foss/issues/54760)
