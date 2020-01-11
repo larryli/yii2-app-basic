@@ -48,7 +48,11 @@ Key | Value
 `ROLLOUT_STATUS_DISABLED` | default `false`, set `true` do not show rollout status on deploy
 `STAGING_ENABLED` | default `true` when **Deployment strategy** of **CI / CD Settings** is "*Automatic deployment to staging, manual deployment to production*", otherwise default `false`, set `true` enable staging
 `TLS_ACME` | default `true`, set `false` to disable apply cert and key by acme
+`TLS_CERT_FILE` | custom tls cert when `TLS_SECRET_NAME` or `<env>_TLS_SECRET_NAME` is set, must set **File** type 
+`<env>_TLS_CERT_FILE` | custom tls cert for env, such as `PRODUCTION_TLS_CERT_FILE`
 `TLS_ENABLE` | default `true`, set `false` to disable tls
+`TLS_KEY_FILE` | custom tls key when `TLS_SECRET_NAME` or `<env>_TLS_SECRET_NAME` is set, must set **File** type
+`<env>_TLS_KEY_FILE` | custom tls key for env, such as `PRODUCTION_TLS_KEY_FILE`
 `TLS_SECRET_NAME` | custom secret name of the tls cert and key
 `<env>_TLS_SECRET_NAME` | custom secret name for env, such as `PRODUCTION_TLS_SECRET_NAME`
 `TLS_SSL_REDIRECT` | default `false`, set `true` to enable redirect 443 from 80

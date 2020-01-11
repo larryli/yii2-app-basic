@@ -27,81 +27,6 @@ if [[ -n "$AUTO_DEVOPS_BUILD_IMAGE_FORWARDED_CI_VARIABLES" ]]; then
   export DOCKER_BUILDKIT=1
 fi
 
-docker image pull "$CI_APPLICATION_REPOSITORY:composer" || true
-
-# Build the composer stage:
-docker build \
-  --target composer \
-  --cache-from "$CI_APPLICATION_REPOSITORY:composer" \
-  $build_secret_args \
-  --build-arg BUILD_ASSET="$BUILD_ASSET" \
-  --build-arg BUILD_DEV="$BUILD_DEV" \
-  --build-arg HTTP_PROXY="$HTTP_PROXY" \
-  --build-arg http_proxy="$http_proxy" \
-  --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
-  --build-arg https_proxy="$https_proxy" \
-  --build-arg FTP_PROXY="$FTP_PROXY" \
-  --build-arg ftp_proxy="$ftp_proxy" \
-  --build-arg NO_PROXY="$NO_PROXY" \
-  --build-arg no_proxy="$no_proxy" \
-  $AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS \
-  --tag "$CI_APPLICATION_REPOSITORY:composer" .
-
-docker push "$CI_APPLICATION_REPOSITORY:composer"
-
-docker image pull "$CI_APPLICATION_REPOSITORY:builder" || true
-
-# Build the builder stage:
-docker build \
-  --target builder \
-  --cache-from "$CI_APPLICATION_REPOSITORY:composer" \
-  --cache-from "$CI_APPLICATION_REPOSITORY:builder" \
-  $build_secret_args \
-  --build-arg BUILD_ASSET="$BUILD_ASSET" \
-  --build-arg BUILD_DEV="$BUILD_DEV" \
-  --build-arg HTTP_PROXY="$HTTP_PROXY" \
-  --build-arg http_proxy="$http_proxy" \
-  --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
-  --build-arg https_proxy="$https_proxy" \
-  --build-arg FTP_PROXY="$FTP_PROXY" \
-  --build-arg ftp_proxy="$ftp_proxy" \
-  --build-arg NO_PROXY="$NO_PROXY" \
-  --build-arg no_proxy="$no_proxy" \
-  $AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS \
-  --tag "$CI_APPLICATION_REPOSITORY:builder" .
-
-docker push "$CI_APPLICATION_REPOSITORY:builder"
-
-# pull images for cache - this is required, otherwise --cache-from will not work
-docker image pull "$CI_APPLICATION_REPOSITORY:$CI_COMMIT_BEFORE_SHA" || \
-docker image pull "$CI_APPLICATION_REPOSITORY:latest" || \
-true
-
-# Build the runtime stage, using cached compile stage:
-# shellcheck disable=SC2154 # missing variable warning for the lowercase variables
-docker build \
-  --cache-from "$CI_APPLICATION_REPOSITORY:composer" \
-  --cache-from "$CI_APPLICATION_REPOSITORY:builder" \
-  --cache-from "$CI_APPLICATION_REPOSITORY:$CI_COMMIT_BEFORE_SHA" \
-  --cache-from "$CI_APPLICATION_REPOSITORY:latest" \
-  $build_secret_args \
-  --build-arg BUILD_ASSET="$BUILD_ASSET" \
-  --build-arg BUILD_DEV="$BUILD_DEV" \
-  --build-arg HTTP_PROXY="$HTTP_PROXY" \
-  --build-arg http_proxy="$http_proxy" \
-  --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
-  --build-arg https_proxy="$https_proxy" \
-  --build-arg FTP_PROXY="$FTP_PROXY" \
-  --build-arg ftp_proxy="$ftp_proxy" \
-  --build-arg NO_PROXY="$NO_PROXY" \
-  --build-arg no_proxy="$no_proxy" \
-  $AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS \
-  --tag "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" \
-  --tag "$CI_APPLICATION_REPOSITORY:latest" .
-
-docker push "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG"
-docker push "$CI_APPLICATION_REPOSITORY:latest"
-
 if [[ -f Dockerfile-nginx ]]; then
   echo "Building nginx..."
 
@@ -147,3 +72,78 @@ if [[ -f Dockerfile-nginx ]]; then
 
   docker push "$CI_APPLICATION_REPOSITORY:nginx"
 fi
+
+echo "Building app..."
+
+docker image pull "$CI_APPLICATION_REPOSITORY:builder" || true
+
+# Build the builder stage:
+docker build \
+  --target builder \
+  --cache-from "$CI_APPLICATION_REPOSITORY:builder" \
+  $build_secret_args \
+  --build-arg HTTP_PROXY="$HTTP_PROXY" \
+  --build-arg http_proxy="$http_proxy" \
+  --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
+  --build-arg https_proxy="$https_proxy" \
+  --build-arg FTP_PROXY="$FTP_PROXY" \
+  --build-arg ftp_proxy="$ftp_proxy" \
+  --build-arg NO_PROXY="$NO_PROXY" \
+  --build-arg no_proxy="$no_proxy" \
+  $AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS \
+  --tag "$CI_APPLICATION_REPOSITORY:builder" .
+
+docker push "$CI_APPLICATION_REPOSITORY:builder"
+
+docker image pull "$CI_APPLICATION_REPOSITORY:composer" || true
+
+# Build the composer stage:
+docker build \
+  --target composer \
+  --cache-from "$CI_APPLICATION_REPOSITORY:builder" \
+  --cache-from "$CI_APPLICATION_REPOSITORY:composer" \
+  $build_secret_args \
+  --build-arg BUILD_ASSET="$BUILD_ASSET" \
+  --build-arg BUILD_DEV="$BUILD_DEV" \
+  --build-arg HTTP_PROXY="$HTTP_PROXY" \
+  --build-arg http_proxy="$http_proxy" \
+  --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
+  --build-arg https_proxy="$https_proxy" \
+  --build-arg FTP_PROXY="$FTP_PROXY" \
+  --build-arg ftp_proxy="$ftp_proxy" \
+  --build-arg NO_PROXY="$NO_PROXY" \
+  --build-arg no_proxy="$no_proxy" \
+  $AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS \
+  --tag "$CI_APPLICATION_REPOSITORY:composer" .
+
+docker push "$CI_APPLICATION_REPOSITORY:composer"
+
+# pull images for cache - this is required, otherwise --cache-from will not work
+docker image pull "$CI_APPLICATION_REPOSITORY:$CI_COMMIT_BEFORE_SHA" || \
+docker image pull "$CI_APPLICATION_REPOSITORY:latest" || \
+true
+
+# Build the runtime stage, using cached compile stage:
+# shellcheck disable=SC2154 # missing variable warning for the lowercase variables
+docker build \
+  --cache-from "$CI_APPLICATION_REPOSITORY:builder" \
+  --cache-from "$CI_APPLICATION_REPOSITORY:composer" \
+  --cache-from "$CI_APPLICATION_REPOSITORY:$CI_COMMIT_BEFORE_SHA" \
+  --cache-from "$CI_APPLICATION_REPOSITORY:latest" \
+  $build_secret_args \
+  --build-arg BUILD_ASSET="$BUILD_ASSET" \
+  --build-arg BUILD_DEV="$BUILD_DEV" \
+  --build-arg HTTP_PROXY="$HTTP_PROXY" \
+  --build-arg http_proxy="$http_proxy" \
+  --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
+  --build-arg https_proxy="$https_proxy" \
+  --build-arg FTP_PROXY="$FTP_PROXY" \
+  --build-arg ftp_proxy="$ftp_proxy" \
+  --build-arg NO_PROXY="$NO_PROXY" \
+  --build-arg no_proxy="$no_proxy" \
+  $AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS \
+  --tag "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" \
+  --tag "$CI_APPLICATION_REPOSITORY:latest" .
+
+docker push "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG"
+docker push "$CI_APPLICATION_REPOSITORY:latest"

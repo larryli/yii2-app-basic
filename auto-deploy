@@ -166,6 +166,29 @@ function deploy() {
   if [[ ! -z "$tls_secret_name" ]]; then
     tls_acme="false"
     tls_enabled="true"
+
+    local tls_cert_file
+    eval local env_TLS_CERT_FILE="\$${env_slug}_TLS_CERT_FILE"
+    if [ -n "$env_TLS_CERT_FILE" ]; then
+      tls_cert_file="$env_TLS_CERT_FILE"
+    elif [ -n "$TLS_CERT_FILE" ]; then
+      tls_cert_file="$TLS_CERT_FILE"
+    fi
+    local tls_key_file
+    eval local env_TLS_KEY_FILE="\$${env_slug}_TLS_KEY_FILE"
+    if [ -n "$env_TLS_KEY_FILE" ]; then
+      tls_key_file="$env_TLS_KEY_FILE"
+    elif [ -n "$TLS_KEY_FILE" ]; then
+      tls_key_file="$TLS_KEY_FILE"
+    fi
+    if [[ -f "$tls_cert_file" && -f "$tls_key_file" ]]; then
+      echo "Create secret tls..."
+      kubectl create secret -n "$KUBE_NAMESPACE" \
+        tls "$tls_secret_name" \
+        --cert="$tls_cert_file" \
+        --key="$tls_key_file" \
+        -o yaml --dry-run | kubectl replace -n "$KUBE_NAMESPACE" --force -f -
+    fi
   fi
   if [[ "$tls_enabled" == "false" ]]; then
     tls_acme="false"

@@ -1,3 +1,18 @@
+FROM php:fpm-alpine AS builder
+
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
+    && apk add -U --no-cache git \
+        freetype-dev \
+        icu-dev \
+        libjpeg-turbo-dev \
+        libzip-dev \
+    && docker-php-ext-configure intl \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) intl \
+        gd \
+        pdo_mysql \
+        zip
+
 FROM composer AS composer
 
 RUN composer config -g repo.packagist composer https://mirrors.aliyun.com/composer \
@@ -28,25 +43,13 @@ RUN if [ "$BUILD_DEV" = true ]; then \
   fi
 
 RUN if [ "$BUILD_ASSET" = true ]; then \
-    cp -r /app/vendor/bower-asset/bootstrap/dist/* /app/web/ \
-    && /app/yii asset/compress /app/config/assets.php /app/config/asset-bundles.php \
-    && rm -rf /app/web/css /app/web/js /app/vendor/bower-asset /app/vendor/npm-asset; \
+    cp -rf /app/vendor/bower-asset/bootstrap/dist/* /app/web/; \
+    /app/yii asset/compress /app/config/assets.php /app/config/asset-bundles.php; \
+    rm -rf /app/web/css /app/web/js /app/vendor/npm-asset; \
+    if [ "$BUILD_DEV" != true ]; then \
+      rm -rf /app/vendor/bower-asset; \
+    fi \
   fi
-
-FROM php:fpm-alpine AS builder
-
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
-    && apk add -U --no-cache git \
-        freetype-dev \
-        icu-dev \
-        libjpeg-turbo-dev \
-        libzip-dev \
-    && docker-php-ext-configure intl \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) intl \
-        gd \
-        pdo_mysql \
-        zip
 
 FROM php:fpm-alpine
 
