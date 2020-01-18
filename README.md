@@ -516,8 +516,8 @@ Yii2 前端资源目录。应用容器中 app（php-fpm）与 nginx 共享目录
 *Continuous deployment to production* | - | `true` | 自动部署 | 手动部署
 *Continuous deployment to production* | `manual` | - | 无 | 手动增量部署
 *Continuous deployment to production* | `manual` | `true` | 自动部署 | 手动增量部署
-*Continuous deployment to production using timed incremental rollout* | - | - | 无 | 定时增量部署
-*Continuous deployment to production using timed incremental rollout* | - | `true` | 自动部署 | 定时增量部署
+*Continuous deployment to production using timed incremental rollout* | - | - | 无 | 延后 5 分钟自动增量部署
+*Continuous deployment to production using timed incremental rollout* | - | `true` | 自动部署 | 延后 5 分钟自动增量部署
 *Automatic deployment to staging, manual deployment to production* | - | `false` | 无 | 手动增量部署
 *Automatic deployment to staging, manual deployment to production* | - | - | 自动部署 | 手动增量部署
 
@@ -551,7 +551,9 @@ Yii2 前端资源目录。应用容器中 app（php-fpm）与 nginx 共享目录
 
 使用单独指定 **Scope** 的 `TLS_SECRET_NAME` 或具体 `<env>_TLS_SECRET_NAME` 如 `PRODUCTION_TLS_SECRET_NAME` 设置部署应用的 SSL 证书 secret name。
 
-请先使用下面的命令创建 secret tls 存放对应的证书与私钥：
+`<env>_TLS_SECRET_NAME` 的优先级要比 `TLS_SECRET_NAME` 高。
+
+可以使用下面的命令创建 secret tls 存放对应的证书与私钥：
 
 ```bash
 export KUBE_NAMESPACE=yii2-auto-devops-1-production
@@ -561,7 +563,9 @@ export KEY_FILE=$HOME/ssl-certs/example.com.key
 kubectl -n $KUBE_NAMESPACE create secret tls $TLS_SECRET_NAME --cert=$CERT_FILE --key=$KEY_FILE
 ```
 
-`<env>_TLS_SECRET_NAME` 的优先级要比 `TLS_SECRET_NAME` 高。
+也可以指定 **Type** 为 *File* 的 `TLS_CERT_FILE`（`<env>_TLS_CERT_FILE`）与 `TLS_KEY_FILE`（`<env>_TLS_KEY_FILE`）分别存放证书与私钥。
+
+注意：**Type** 为 *File* 不能勾选 **Masked**，也就是当使用 `CI_DEBUG_TRACE` = `true` 调试 CI 时会在日志中显示完整的证书与私钥内容。存在安全隐患，请一定要在调试完成后删除 CI 日志。
 
 当指定 `TLS_SECRET_NAME` 时会强制 `TLS_ENABLED` = `true` 和 `TLS_ACME` = `false`。
 
@@ -636,13 +640,15 @@ kubectl -n $KUBE_NAMESPACE create secret tls $TLS_SECRET_NAME --cert=$CERT_FILE 
 
 #### Yii2 环境与调试以及开发构建
 
-默认 `YII_DEBUG=false` `YII_ENV=prod`。
+默认 `YII_DEBUG` = `false` `YII_ENV` = `prod`。
 
 可以使用 `K8S_SECRET_YII_DEBUG` 和 `K8S_SECRET_YII_ENV` 分别配置为 `true` 与 `dev` 开启调试。
 
 并设置 `K8S_SECRET_DEBUG_IP` = `*` 允许所有 IP 可访问调试面板。
 
 默认 `BUILD_DEV` = `false` 会在 Dockerfile 构建时 `composer` 使用 `--no-dev` 参数不在映像中包含调试（开发测试）功能。如果需要线上调试，请配置 `BUILD_DEV` = `true` 构建参数包含调试（开发测试）功能。否则会部署失败（无法加载 dev 相关包）。
+
+注意：`.gitlab-ci.yml` 构建阶段（build stage）是没有定义环境，也就是无法配置范围（Scope）。只能配置所有环境（All environments）或者手工执行（建议）时指定 `BUILD_DEV` = `true`、`K8S_SECRET_YII_DEBUG` = `true`、`K8S_SECRET_YII_ENV` = `dev` 和 `K8S_SECRET_DEBUG_IP` = `*`（后三个支持环境范围配置）。
 
 #### 构建前端 assets 资源
 
@@ -651,6 +657,8 @@ kubectl -n $KUBE_NAMESPACE create secret tls $TLS_SECRET_NAME --cert=$CERT_FILE 
 具体的资源使用定义在 `config/assets.php` 中。如果发现前端仍有载入前端 `web/assets` 目录下的临时文件，请将对应的 Asset 类加入 `config/assets.php` 的 `bundles` 数组中。如果第三方包使用 CDN 也可以对应配置外部资源。
 
 使用 `BUILD_ASSET` = `false` 可以关闭资源打包。
+
+注意：`.gitlab-ci.yml` 构建阶段（build stage）是没有定义环境，也就是无法配置范围（Scope）。只能配置所有环境（All environments）或者手工执行（建议）时指定 `BUILD_ASSET` = `false`。
 
 #### 其他变量
 
@@ -740,6 +748,8 @@ kubectl -n $KUBE_NAMESPACE create secret tls $TLS_SECRET_NAME --cert=$CERT_FILE 
 小幅调整了 `download_chart`。
 
 主要修改在 `deploy` 的 `helm upgrade --install`。`--force` 参数是为了解决后台队列任务更新部署时无法自动删除旧有任务的问题。
+
+然后额外处理了 SSL 证书相关的逻辑。
 
 ### 多项目共用配置
 
