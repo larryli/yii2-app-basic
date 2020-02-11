@@ -74,7 +74,7 @@ build:
 
 # https://gitlab.com/gitlab-org/gitlab-foss/blob/master/lib/gitlab/ci/templates/Jobs/Deploy.gitlab-ci.yml
 .auto-deploy:
-  image: "registry.gitlab.com/gitlab-org/cluster-integration/auto-deploy-image:v0.8.3"
+  image: "registry.gitlab.com/gitlab-org/cluster-integration/auto-deploy-image:v0.9.1"
 
 review:
   extends: .auto-deploy
