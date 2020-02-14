@@ -235,7 +235,7 @@ function deploy() {
       --set mysql.imageTag="$MYSQL_VERSION" \
       --set application.mysqlHost="$MYSQL_HOST" \
       --set application.initializeCommand="$DB_INITIALIZE" \
-      --set redis.enabled="$redis_enabled" \
+      --set redis.enabled="$REDIS_ENABLED" \
       --set redis.nameOverride="redis" \
       --set redis.password="$REDIS_PASSWORD" \
       --set redis.imageTag="$REDIS_VERSION" \
