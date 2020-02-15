@@ -11,7 +11,7 @@ variables:
   MYSQL_USER: user
   MYSQL_VERSION: 5.7.28
 
-  DB_INITIALIZE: "/app/bin/wait-for -t 999 -- echo Initialized."
+  DB_INITIALIZE: "/app/wait-for -t 999 -- echo Initialized."
   DB_MIGRATE: "/app/yii migrate/up --interactive=0"
 
   CRON_CMD: "/app/yii hello"
