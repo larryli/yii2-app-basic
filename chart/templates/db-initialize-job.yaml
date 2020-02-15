@@ -22,10 +22,6 @@ spec:
       restartPolicy: Never
       imagePullSecrets:
 {{ toYaml .Values.image.secrets | indent 10 }}
-      volumes:
-      # yii2 runtime
-      - name: runtime
-        emptyDir: {}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -38,19 +34,8 @@ spec:
             name: {{ .Values.application.secretName }}
         {{- end }}
         env:
-        - name: MYSQL_HOST
+        - name: HOST
           value: {{ .Values.application.mysqlHost | quote }}
-        - name: MYSQL_USER
-          value: {{ .Values.mysql.mysqlUser | quote }}
-        - name: MYSQL_PASSWORD
-          value: {{ .Values.mysql.mysqlPassword | quote }}
-        - name: MYSQL_DB
-          value: {{ .Values.mysql.mysqlDatabase | quote }}
-        - name: REDIS_HOST
-          value: {{ .Values.application.redisHost | quote }}
-        - name: REDIS_PASSWORD
-          value: {{ .Values.redis.password | quote }}
-        volumeMounts:
-        - name: runtime
-          mountPath: /app/runtime
+        - name: PORT
+          value: "3306"
 {{- end -}}

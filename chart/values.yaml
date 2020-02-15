@@ -3,6 +3,7 @@
 # Declare variables to be passed into your templates.
 replicaCount: 1
 parallelismCount: 2
+releaseOverride:
 image:
   repository: gitlab.example.com/group/project
   tag: stable
@@ -18,10 +19,10 @@ application:
   cronCommand:
   cronSchedule:
   mysqlHost:
-  nchanHost:
   queueCommand:
   secretName:
   secretChecksum:
+  redisDatabase:
   redisHost:
 hpa:
   enabled: false

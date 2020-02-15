@@ -47,8 +47,10 @@ spec:
           value: {{ .Values.application.redisHost | quote }}
         - name: REDIS_PASSWORD
           value: {{ .Values.redis.password | quote }}
+        - name: REDIS_DB
+          value: {{ .Values.application.redisDatabase | quote }}
         - name: NCHAN_HOST
-          value: {{ .Values.application.nchanHost | quote }}
+          value: "{{ .Values.releaseOverride }}-auto-deploy"
         volumeMounts:
         - name: runtime
           mountPath: /app/runtime

@@ -17,7 +17,7 @@ data:
     }
     http {
       upstream redis_server {
-        nchan_redis_server redis://:{{ .Values.redis.password }}@{{ .Values.application.redisHost }}:6379/0;
+        nchan_redis_server redis://:{{ .Values.redis.password }}@{{ .Values.application.redisHost }}:6379/{{ .Values.application.redisDatabase }};
       }
       include /etc/nginx/mime.types;
       default_type application/octet-stream;

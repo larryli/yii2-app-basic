@@ -1,12 +1,6 @@
 #!/bin/sh
-
-# default for mysql
-HOST=$MYSQL_HOST
-PORT=3306
-
 # https://github.com/eficode/wait-for/blob/master/wait-for
-
-TIMEOUT=1500
+TIMEOUT=15
 QUIET=0
 
 echoerr() {
