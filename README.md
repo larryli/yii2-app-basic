@@ -579,12 +579,10 @@ kubectl -n $KUBE_NAMESPACE create secret tls $TLS_SECRET_NAME --cert=$CERT_FILE 
 
 #### 数据库初始化与迁移
 
-对于 Yii2 来说，均采用了相同脚本，即：
-
-- `DB_INITIALIZE` = `/app/wait-for -- /app/yii migrate/up --interactive=0`
+- `DB_INITIALIZE` = `/app/wait-for -t 999 -- echo Initialized.`
 - `DB_MIGRATE` = `/app/yii migrate/up --interactive=0`
 
-其中 `DB_INITIALIZE` 使用了特殊的 `wait-for` 脚本等待 Kubernetes 创建 MySQL 服务成功。
+其中 `DB_INITIALIZE` 直接使用 `wait-for` 脚本等待 k8s 创建 MySQL 服务成功。其中 `HOST` 与 `PORT` 是在环境变量中定义；无法在 `DB_INITIALIZE` 中直接使用 `/app/wait-for $MYSQL_HOST:3306`，因为 k8s 自动创建的 `MYSQL_HOST` 是在 `auto-deploy` 中才定义的（`.gitlab-ci.yml` 中引用 `$MYSQL_HOST` 会为空值）。
 
 使用默认值即可，一般无需修改。
 
@@ -598,9 +596,9 @@ kubectl -n $KUBE_NAMESPACE create secret tls $TLS_SECRET_NAME --cert=$CERT_FILE 
 
 可以使用 `REDIS_ENABLED` = `false` 关闭默认的自动部署 Redis 单例服务，从而使用外部 Redis（可以手工在同一 Kubernets 上安装，也可以使用现有服务）。
 
-当 `REDIS_ENABLED` = `false` 时，建议按实际情况完整指定 `REDIS_HOST`、`K8S_SECRET_REDIS_DB` 与 `REDIS_PASSWORD`。
+当 `REDIS_ENABLED` = `false` 时，建议按实际情况完整指定 `REDIS_HOST`、`REDIS_DB` 与 `REDIS_PASSWORD`。
 
-当 `REDIS_ENABLED` = `true` 时，一定不要设置 `REDIS_HOST`，否则无法连接自动安装的 Redis。`K8S_SECRET_REDIS_DB` 与 `REDIS_PASSWORD` 可以按需指定。另外可以使用 `REDIS_VERSION` 指定 Redis 版本。
+当 `REDIS_ENABLED` = `true` 时，一定不要设置 `REDIS_HOST`，否则无法连接自动安装的 Redis。`REDIS_DB` 与 `REDIS_PASSWORD` 可以按需指定。另外可以使用 `REDIS_VERSION` 指定 Redis 版本。
 
 当前 Yii2 缓存使用 Redis，并未设置 `replicas`。对于外部 Redis 建议使用 sentinel 哨兵集群。
 
@@ -751,9 +749,62 @@ kubectl -n $KUBE_NAMESPACE create secret tls $TLS_SECRET_NAME --cert=$CERT_FILE 
 
 然后额外处理了 SSL 证书相关的逻辑。
 
-### 多项目共用配置
+## 优化指南
 
-除了 `.gitlab-ci.yml` 文件需要在每个项目复制一份以外。可以类似 GitLab 官方项目创建 `auto-build-image`、`auto-deploy-image` 与 `auto-deploy-app` 三个项目。前两项在 `build` 和 `.auto-deploy` 下直接修改对应的 `image` 即可。最后一项可以在 `variables` 中定义 `AUTO_DEVOPS_CHART` 相关变量（需要自建 chart 仓库）。
+本项目的代码是让一个独立项目展示所有技术细节。对于实际的项目，相关优化必不可少；否则缓慢的重复构建，多个项目之间的重复代码也让维护头疼。
+
+### Docker 预先构建
+
+对于 `composer`、`php` 与 `nginx` 可以创建三个内部项目单独构建，应用项目直接使用即可。
+
+其中 `composer` 的基础内容与项目内容要分拆，即只拆出 `COPY composer.* /app` 之前的内容。
+
+### Auto DevOps
+
+#### auto-build-image
+
+建议按照[官方项目](https://gitlab.com/gitlab-org/cluster-integration/auto-build-image/)去掉 ruby（Dockerfile.erb）与 herokuish（BUILDPACK）相关支持重新构建。
+
+另外，构建脚本可以增加一个可选的 `BUILD_TARGET` 阶段构建选项来确定是否缓存中间阶段映像。
+
+#### auto-deploy-image
+
+建议在[官方项目](https://gitlab.com/gitlab-org/cluster-integration/auto-deploy-image/)的基础上修改，覆盖掉部署脚本。
+
+首先，可以去掉 `AUTO_DEVOPS_CHART` 下载逻辑，只支持项目本地 chart。
+
+其中，不同项目的 chart 不同，会导致 `helm upgrade --install` 的参数变化。除了有效利用 `HELM_UPGRADE_EXTRA_ARGS` 来传参外，建议另外定义一个 `DEPLOY_SCRIPT` 脚本来处理相关服务的逻辑，替换掉默认的操作。
+
+#### auto-deploy-chart
+
+如果许多项目存在共同的部署模板，可以考虑修改。但 chart 不能使用 git 项目，需要另外部署服务。
+
+#### Auto-DevOps.gitlab-ci.yaml
+
+自定义 `auto-build-image` 与 `auto-deploy-image` 后，就可以修改[官方脚本](https://gitlab.com/gitlab-org/gitlab-foss/blob/master/lib/gitlab/ci/templates/Auto-DevOps.gitlab-ci.yml)使用 [`include file`](https://docs.gitlab.com/ee/ci/yaml/#includefile) 引用。
+
+而 `Auto-DevOps.gitlab-ci.yaml` 具体内容可以直接：
+
+```yaml
+include:
+  - template: Jobs/Build.gitlab-ci.yml
+  - template: Jobs/Deploy.gitlab-ci.yml
+
+# https://gitlab.com/gitlab-org/gitlab-foss/blob/master/lib/gitlab/ci/templates/Jobs/Build.gitlab-ci.yml
+build:
+  image: "registry.192-168-99-8.nip.io/devops/auto-build-image"
+  variables:
+    DOCKER_CONCURRENT: 6
+    DOCKER_DAEMON_OPTIONS: "--registry-mirror=${REGISTRY_MIRROR} --insecure-registry=${CI_REGISTRY} --max-concurrent-downloads=${DOCKER_CONCURRENT}"
+  services:
+    # https://gitlab.com/gitlab-org/gitlab-runner/issues/3808#note_244570527
+    - name: docker:stable-dind
+      entrypoint: [ "sh", "-c", "dockerd-entrypoint.sh ${DOCKER_DAEMON_OPTIONS}" ]
+
+# https://gitlab.com/gitlab-org/gitlab-foss/blob/master/lib/gitlab/ci/templates/Jobs/Deploy.gitlab-ci.yml
+.auto-deploy:
+  image: "registry.192-168-99-8.nip.io/devops/auto-deploy-image"
+```
 
 ## FAQ
 
