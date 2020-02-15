@@ -20,7 +20,6 @@ Key | Value
 `K8S_SECRET_DEBUG_IP` | see app env `DEBUG_IP`
 `K8S_SECRET_ENABLE_SCHEMA_CACHE` | see app env `ENABLE_SCHEMA_CACHE`
 `K8S_SECRET_QUEUE_CHANNEL` | see app env `QUEUE_CHANNEL`
-`K8S_SECRET_REDIS_DB` | see app env `REDIS_DB`
 `K8S_SECRET_SCHEMA_CACHE` | see app env `SCHEMA_CACHE`
 `K8S_SECRET_SCHEMA_CACHE_DURATION` | see app env `SCHEMA_CACHE_DURATION`
 `K8S_SECRET_SENDER_EMAIL` | see app env `SENDER_EMAIL`
@@ -40,6 +39,7 @@ Key | Value
 `MYSQL_USER` | default `user`
 `MYSQL_VERSION` | default `5.7.28`
 `QUEUE_CMD` | default `/app/yii queue/listen --verbose`
+`REDIS_DB` | default set `0`
 `REDIS_ENABLED` | default `true` means install app with redis service, set `false` to use external redis service without automatic installed redis service
 `REDIS_HOST` | host of automatic installed redis service when `REDIS_ENABLED` = `true`, must be set when `REDIS_ENABLED` = `false`
 `REDIS_PASSWORD` | default `testing-password`, suggest with **Masked**
