@@ -56,6 +56,7 @@ if [[ -f Dockerfile-nginx ]]; then
   # Build the nginx:
   docker build \
     -f Dockerfile-nginx \
+    --cache-from "$CI_APPLICATION_REPOSITORY:nginx-builder" \
     --cache-from "$CI_APPLICATION_REPOSITORY:nginx" \
     $build_secret_args \
     --build-arg HTTP_PROXY="$HTTP_PROXY" \
@@ -99,6 +100,7 @@ docker image pull "$CI_APPLICATION_REPOSITORY:composer" || true
 # Build the composer stage:
 docker build \
   --target composer \
+  --cache-from "$CI_APPLICATION_REPOSITORY:builder" \
   --cache-from "$CI_APPLICATION_REPOSITORY:composer" \
   $build_secret_args \
   --build-arg BUILD_ASSET="$BUILD_ASSET" \
@@ -124,6 +126,8 @@ true
 # Build the runtime stage, using cached compile stage:
 # shellcheck disable=SC2154 # missing variable warning for the lowercase variables
 docker build \
+  --cache-from "$CI_APPLICATION_REPOSITORY:builder" \
+  --cache-from "$CI_APPLICATION_REPOSITORY:composer" \
   --cache-from "$CI_APPLICATION_REPOSITORY:$CI_COMMIT_BEFORE_SHA" \
   --cache-from "$CI_APPLICATION_REPOSITORY:latest" \
   $build_secret_args \
