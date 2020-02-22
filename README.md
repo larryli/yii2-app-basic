@@ -191,13 +191,15 @@ sudo nano /var/snap/microk8s/current/args/kube-apiserver
 sudo microk8s.stop && sudo microk8s.start
 ```
 
-无误后，开启 dns 与 storage 组件：
+无误后，开启 dns、 storage 与 metallb 组件：
 
 ```bash
-sudo microk8s.enable dns storage
+sudo microk8s.enable dns storage metallb
 ```
 
-其中 dns 用于内部寻址，storage 用于持久化存储。
+其中 dns 用于内部寻址，storage 用于持久化存储，metallb 用于 Load Balancer 分配 Ingress 外部 IP。
+
+启用过程中会提示输入 MetalLB 的 IP 范围，输入 `192.168.99.9`。
 
 使用 `sudo microk8s.kubectl -n kube-system get pods` 查看组件部署状态。
 
@@ -296,6 +298,89 @@ registry_nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab.example.com.key"
 
 参见 [https://docs.gitlab.com/ee/administration/packages/container_registry.html#configure-container-registry-under-an-existing-gitlab-domain](https://docs.gitlab.com/ee/administration/packages/container_registry.html#configure-container-registry-under-an-existing-gitlab-domain)
 
+### 修改 GitLab Helm 安装命令
+
+可以修改 gitlab helm 命令代码来加速 GitLab Managed Apps 的 helm 安装。
+
+```bash
+sudo nano /opt/gitlab/embedded/service/gitlab-rails/lib/gitlab/kubernetes/helm/init_command.rb
+``` 
+
+修改：
+
+```ruby
+        def tls_flags
+          [
+            '--tiller-tls',
+            '--tiller-tls-verify',
+            '--tls-ca-cert', "#{files_dir}/ca.pem",
+            '--tiller-tls-cert', "#{files_dir}/cert.pem",
+            '--tiller-tls-key', "#{files_dir}/key.pem"
+          ]
+        end
+```
+
+为：
+
+```ruby
+        def tls_flags
+          [
+            '--stable-repo-url', 'https://mirror.azure.cn/kubernetes/charts/',
+            '--tiller-tls',
+            '--tiller-tls-verify',
+            '--tls-ca-cert', "#{files_dir}/ca.pem",
+            '--tiller-tls-cert', "#{files_dir}/cert.pem",
+            '--tiller-tls-key', "#{files_dir}/key.pem"
+          ]
+        end
+```
+
+```bash
+sudo nano /opt/gitlab/embedded/service/gitlab-rails/lib/gitlab/kubernetes/helm/client_command.rb
+```
+
+修改：
+
+```ruby
+        def init_command
+          if local_tiller_enabled?
+            <<~HEREDOC.chomp
+            export HELM_HOST="localhost:44134"
+            tiller -listen ${HELM_HOST} -alsologtostderr &
+            helm init --client-only
+            HEREDOC
+          else
+            # Here we are always upgrading to the latest version of Tiller when
+            # installing an app. We ensure the helm version stored in the
+            # database is correct by also updating this after transition to
+            # :installed,:updated in Clusters::Concerns::ApplicationStatus
+            'helm init --upgrade'
+          end
+        end
+```
+
+为：
+
+```ruby
+        def init_command
+          if local_tiller_enabled?
+            <<~HEREDOC.chomp
+            export HELM_HOST="localhost:44134"
+            tiller -listen ${HELM_HOST} -alsologtostderr &
+            helm init --client-only --stable-repo-url https://mirror.azure.cn/kubernetes/charts/
+            HEREDOC
+          else
+            # Here we are always upgrading to the latest version of Tiller when
+            # installing an app. We ensure the helm version stored in the
+            # database is correct by also updating this after transition to
+            # :installed,:updated in Clusters::Concerns::ApplicationStatus
+            'helm init --upgrade --stable-repo-url https://mirror.azure.cn/kubernetes/charts/'
+          end
+        end
+```
+
+修改完成后，需要 `sudo gitlab-ctl restart` 重启 GitLab 服务。
+
 ### 在 GitLab 上配置 Kubernetes
 
 访问 http://gitlab.192-168-99-8.nip.io 设置 root 密码后登录。
@@ -358,6 +443,8 @@ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | gre
 
 然后，依次安装 **Helm Tiller**、**Ingress**、**GitLab Runner**，可选安装 **Prometheus**，对于公网 IP 建议安装 **Cert-Manager**。
 
+安装时可以使用 `kubectl -n gitlab-managed-apps logs install-runner -f` 来监控安装日志。
+
 如果 `kubectl -n gitlab-managed-apps get pods` 发现有 `ImagePullBackOff` 使用 `kubectl -n gitlab-managed-apps describe pod ingress-nginx-ingress-default-backend-xxx-yyy` 查看。
 
 可以在虚拟机上使用类似 `docker image tag` 的操作：
@@ -378,11 +465,13 @@ sudo rm temp.tar
 kubectl -n gitlab-managed-apps get svc ingress-nginx-ingress-controller
 ```
 
-可以看到 `EXTERNAL-IP` 为 `<pending>`。
+成功启用 MicroK8s MetalLB 组件后会自动分配好 `EXTERNAL-IP` 为 `192.168.99.9`。
+
+如果看到 `EXTERNAL-IP` 为 `<pending>`。
 
 参考 [https://stackoverflow.com/a/54168660](https://stackoverflow.com/a/54168660)
 
-指定具体 IP：
+可以指定 IP：
 
 ```bash
 export EXTERNAL_IP=192.168.99.9
