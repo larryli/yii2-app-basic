@@ -199,7 +199,7 @@ sudo microk8s.enable dns storage metallb
 
 其中 dns 用于内部寻址，storage 用于持久化存储，metallb 用于 Load Balancer 分配 Ingress 外部 IP。
 
-启用过程中会提示输入 MetalLB 的 IP 范围，输入 `192.168.99.9`。
+启用过程中会提示输入 MetalLB 的 IP 范围，输入 `192.168.99.9-192.168.99.9`。
 
 使用 `sudo microk8s.kubectl -n kube-system get pods` 查看组件部署状态。
 
