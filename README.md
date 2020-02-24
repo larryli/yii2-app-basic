@@ -498,7 +498,7 @@ spec:
   externalTrafficPolicy: Local
 ```
 
-注意：Pod 里面需要通过 HTTP 头 `X_FORWARDED_FOR` 来获取 IP。
+注意：Pod 里面需要通过 HTTP 头 `X-Forwarded-For` 来获取 IP。
 
 ## 部署 Yii2 应用
 
