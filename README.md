@@ -478,6 +478,28 @@ export EXTERNAL_IP=192.168.99.9
 kubectl -n gitlab-managed-apps patch svc ingress-nginx-ingress-controller -p "{\"spec\": {\"type\": \"LoadBalancer\", \"externalIPs\":[\"$EXTERNAL_IP\"]}}"
 ```
 
+最后修改 `externalTrafficPolicy` 配置，让 Ingress 可以拿到访问来源 IP：
+
+```bash
+kubectl -n gitlab-managed-apps edit svc ingress-nginx-ingress-controller
+```
+
+找到：
+
+```yaml
+spec:
+  externalTrafficPolicy: Cluster
+```
+
+修改为：
+
+```yaml
+spec:
+  externalTrafficPolicy: Local
+```
+
+注意：Pod 里面需要通过 HTTP 头 `X_FORWARDED_FOR` 来获取 IP。
+
 ## 部署 Yii2 应用
 
 ### 从 GitHub 导入代码
