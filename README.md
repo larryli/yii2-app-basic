@@ -500,6 +500,8 @@ spec:
 
 注意：Pod 里面需要通过 HTTP 头 `X-Forwarded-For` 来获取 IP。
 
+Yii2 `yii\web\Request` 默认会处理 `X-Forwarded-For`、`X-Forwarded-Host`、`X-Forwarded-Proto` 相关 IP 与协议逻辑，但对于 Yii 2.0.13 以上版本还需要配置 [`yii\web\Request::trustedHosts`](https://www.yiiframework.com/doc/api/2.0/yii-web-request#$trustedHosts-detail) 为 `['10.1.0.0/16']` 信任 k8s 内部网络才会处理。
+
 ## 部署 Yii2 应用
 
 ### 从 GitHub 导入代码
