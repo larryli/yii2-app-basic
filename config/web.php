@@ -32,6 +32,7 @@ $config = [
         'redis' => require __DIR__ . '/redis.php',
         'request' => [
             'cookieValidationKey' => getenv('COOKIE_VALIDATION_KEY'),
+            'trustedHosts' => ['10.1.0.0/16'], // k8s network
         ],
         'session' => [
             'class' => yii\web\DbSession::class,
