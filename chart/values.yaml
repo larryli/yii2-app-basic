@@ -3,11 +3,14 @@
 # Declare variables to be passed into your templates.
 replicaCount: 1
 parallelismCount: 2
+strategyType:
+enableSelector:
+deploymentApiVersion: extensions/v1beta1
 releaseOverride:
 image:
   repository: gitlab.example.com/group/project
   tag: stable
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   secrets:
     - name: gitlab-registry
 podAnnotations: {}
@@ -55,6 +58,10 @@ ingress:
   modSecurity:
     enabled: false
     secRuleEngine: "DetectionOnly"
+    # secRules:
+    #   - variable: ""
+    #     operator: ""
+    #     action: ""
 prometheus:
   metrics: false
 livenessProbe:
@@ -115,4 +122,4 @@ networkPolicy:
           matchLabels: {}
       - namespaceSelector:
           matchLabels:
-            name: gitlab-managed-apps
+            app.gitlab.com/managed_by: gitlab

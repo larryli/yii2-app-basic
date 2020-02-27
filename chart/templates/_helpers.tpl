@@ -31,3 +31,11 @@ Get a hostname from URL
 {{- define "hostname" -}}
 {{- . | trimPrefix "http://" |  trimPrefix "https://" | trimSuffix "/" | quote -}}
 {{- end -}}
+{{/*
+Get SecRule's arguments with unescaped single&double quotes
+*/}}
+{{- define "secrule" -}}
+{{- $operator := .operator | quote | replace "\"" "\\\"" | replace "'" "\\'" -}}
+{{- $action := .action | quote | replace "\"" "\\\"" | replace "'" "\\'" -}}
+{{- printf "SecRule %s %s %s" .variable $operator $action -}}
+{{- end -}}

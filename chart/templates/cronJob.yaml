@@ -1,4 +1,4 @@
-{{- if and .Values.application.cronCommand .Values.application.cronSchedule -}}
+{{- if and (not .Values.application.initializeCommand) .Values.application.cronCommand .Values.application.cronSchedule -}}
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:

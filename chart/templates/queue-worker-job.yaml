@@ -1,4 +1,4 @@
-{{- if .Values.application.queueCommand -}}
+{{- if and (not .Values.application.initializeCommand) .Values.application.queueCommand -}}
 apiVersion: batch/v1
 kind: Job
 metadata:

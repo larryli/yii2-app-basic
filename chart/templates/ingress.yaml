@@ -12,10 +12,15 @@ metadata:
 {{- if .Values.ingress.annotations }}
 {{ toYaml .Values.ingress.annotations | indent 4 }}
 {{- end }}
-{{- if and .Values.ingress.modSecurity .Values.ingress.modSecurity.enabled }}
+{{- with .Values.ingress.modSecurity }}
+{{- if .enabled }}
+    nginx.ingress.kubernetes.io/modsecurity-transaction-id: "$server_name-$request_id"
     nginx.ingress.kubernetes.io/modsecurity-snippet: |
-      SecRuleEngine {{ .Values.ingress.modSecurity.secRuleEngine | default "DetectionOnly" | title }}
-
+      SecRuleEngine {{ .secRuleEngine | default "DetectionOnly" | title }}
+{{- range $rule := .secRules }}
+{{ (include "secrule" $rule) | indent 6 }}
+{{- end }}
+{{- end }}
 {{- end }}
 {{- if .Values.prometheus.metrics }}
     nginx.ingress.kubernetes.io/server-snippet: |-
