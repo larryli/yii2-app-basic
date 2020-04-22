@@ -1,7 +1,5 @@
 # 使用 GitLab Auto DevOps 在 Kubernetes 上部署 Yii2 应用
 
-:confused: Azure/container-service-for-azure-china#59
-
 **注意：2020 年 4 月 3 日起，`*.azk8s.cn` 镜像[只允许 Azure China IP](https://github.com/Azure/container-service-for-azure-china/issues/59#issuecomment-608383505) 使用，否则会返回 403。**
 
 首先，感谢 [Guillaume Simon](https://gitlab.com/ipernet) 的 [Deploying Symfony test applications on Kubernetes with GitLab Auto DevOps, k3s and Let's Encrypt - A 30m guide](https://m42.sh/) 一文给予我最大的帮助，使得本文能够完成。
